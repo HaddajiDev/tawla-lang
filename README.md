@@ -26,19 +26,16 @@ Hello, Tawla!
 
 ## Getting it running
 
-You need Python 3.11 or newer. The easiest way to install `tawlac` is with
-[pipx](https://pipx.pypa.io/), which puts it in its own isolated environment and
-on your PATH. It works the same on Windows, macOS, and Linux:
+You need Python 3.11 or newer. Install it from PyPI with pip:
 
 ```
-pipx install tawla
+pip install tawla
 ```
 
-(That works once Tawla is published to PyPI. Until then, install from a clone of
-this repo: `pipx install .` from the project folder, or once it's pushed:
-`pipx install git+https://github.com/HaddajiDev/tawla-lang`.)
+That pulls in everything it needs (including LLVM, via llvmlite) and gives you the
+`tawlac` command. Works the same on Windows, macOS, and Linux.
 
-Prefer plain pip, or just hacking on it from a checkout? That's fine too:
+Hacking on it from a clone of this repo instead? That works too:
 
 ```
 pip install llvmlite
