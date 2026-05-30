@@ -1,7 +1,22 @@
 # Publishing Tawla to PyPI
 
 Once it's on PyPI, anyone can install the compiler with `pipx install tawla`
-(or `pip install tawla`) on any OS. Here's the process.
+(or `pip install tawla`) on any OS.
+
+## The quick way
+
+There's a helper that bumps the version, rebuilds, validates, and uploads:
+
+```
+venv\Scripts\python scripts/release.py 0.1.1     # Windows
+venv/bin/python scripts/release.py 0.1.1         # Linux / macOS
+```
+
+It updates the version in both `pyproject.toml` and `tawla/__init__.py`, asks you
+to confirm before uploading, and `twine` prompts for your token (username
+`__token__`). The manual steps below are the same thing, spelled out.
+
+## The manual steps
 
 ## 1. Finish the metadata
 
