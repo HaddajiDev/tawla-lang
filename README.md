@@ -119,8 +119,6 @@ It's a real language, but it's still a young one. A few honest gaps:
   like `Box<Box<int>>`.
 - Garbage collection has to be triggered with `collect()`; it doesn't kick in on
   its own yet.
-- `import` pulls in other files by relative path, but there's no package system
-  or standard library to speak of yet.
 
 The full design and the step-by-step history of how it was built are in
 `docs/superpowers/specs/2026-05-29-tawla-language-design.md` if you're curious.
