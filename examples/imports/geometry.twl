@@ -1,0 +1,18 @@
+// A little library file. No main, no loose statements — just declarations
+// other files can import and use.
+
+class Point {
+    int x;
+    int y;
+
+    Point(int px, int py) {
+        this.x = px;
+        this.y = py;
+    }
+
+    int sum() { return this.x + this.y; }
+}
+
+int area(int w, int h) {
+    return w * h;
+}

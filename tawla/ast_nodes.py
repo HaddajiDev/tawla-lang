@@ -197,3 +197,15 @@ class ClassDecl:
 class InterfaceDecl:
     name: str
     methods: list[MethodSig]
+
+
+@dataclass
+class Import:
+    """A top-level `import "other.twl";` — pulls another file's declarations in.
+
+    `path` is whatever string the program wrote, resolved relative to the file
+    doing the importing. The loader expands these away before anything else runs,
+    so the rest of the pipeline never sees an Import node.
+    """
+
+    path: str

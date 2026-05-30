@@ -4,12 +4,14 @@ The path: source text -> tokens -> AST -> typed AST -> LLVM IR -> JIT -> it runs
 """
 
 import ctypes
+from pathlib import Path
 
 import llvmlite.binding as llvm
 
 from . import gc_runtime
 from .codegen import build_module
 from .lexer import tokenize
+from .loader import load_program, resolve_imports
 from .monomorphize import monomorphize
 from .parser import parse
 from .sema import check as type_check
@@ -32,14 +34,25 @@ def _initialize() -> None:
     _initialized = True
 
 
-def run_source(src: str) -> int:
-    """Compile some Tawla, run its `main`, and hand back the exit code.
+def run_source(src: str, base_dir=None) -> int:
+    """Compile some Tawla from a string, run its `main`, and hand back the exit
+    code.
 
-    Programs talk to the outside world through `print`, so the return value is
-    almost always 0 — it's really just the process exit status.
+    Any imports in the source resolve relative to `base_dir` (the current working
+    directory if you don't say otherwise). Programs talk to the outside world
+    through `print`, so the return value is almost always 0 — it's really just the
+    process exit status.
     """
-    tokens = tokenize(src)
-    ast = parse(tokens)
+    ast = resolve_imports(parse(tokenize(src)), base_dir or Path.cwd())
+    return _run_items(ast)
+
+
+def run_file(path) -> int:
+    """Compile and run a `.twl` file, following any imports it makes."""
+    return _run_items(load_program(path))
+
+
+def _run_items(ast: list) -> int:
     ast = monomorphize(ast)
     type_check(ast)
     module = build_module(ast)

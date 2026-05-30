@@ -26,6 +26,7 @@ class TokenKind(Enum):
     KW_INTERFACE = auto()
     KW_ABSTRACT = auto()
     KW_SUPER = auto()
+    KW_IMPORT = auto()
     PLUS = auto()
     MINUS = auto()
     STAR = auto()
@@ -69,6 +70,7 @@ KEYWORDS = {
     "interface": TokenKind.KW_INTERFACE,
     "abstract": TokenKind.KW_ABSTRACT,
     "super": TokenKind.KW_SUPER,
+    "import": TokenKind.KW_IMPORT,
 }
 
 

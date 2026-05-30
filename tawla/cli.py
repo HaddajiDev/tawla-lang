@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
-from .compiler import run_source
+from .compiler import run_file
 from .project import entry_path, find_manifest, scaffold
 
 
@@ -79,11 +79,9 @@ def _build() -> int:
 
 
 def _run(file: Path | None) -> int:
-    if file is not None:
-        src = file.read_text(encoding="utf-8")
-    else:
-        src = entry_path(find_manifest(Path.cwd())).read_text(encoding="utf-8")
-    return run_source(src)
+    if file is None:
+        file = entry_path(find_manifest(Path.cwd()))
+    return run_file(file)
 
 
 def _new(name: str) -> int:

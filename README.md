@@ -74,6 +74,8 @@ tawlac help            # or: tawlac help run
 - **Arrays:** `new int[n]`, indexing with `a[i]` (bounds-checked, so you get a
   clear error instead of a crash), and `a.length`.
 - **Comments:** `// like this`.
+- **Imports:** split code across files with `import "other.twl";` — the path is
+  relative to the file importing it, and the `.twl` is optional.
 - **Garbage collection:** you don't free memory by hand. Call `collect()` when
   you want a cleanup pass; `__live()` tells you how many objects are still around.
 
@@ -117,7 +119,8 @@ It's a real language, but it's still a young one. A few honest gaps:
   like `Box<Box<int>>`.
 - Garbage collection has to be triggered with `collect()`; it doesn't kick in on
   its own yet.
-- No file imports, modules, or a standard library to speak of.
+- `import` pulls in other files by relative path, but there's no package system
+  or standard library to speak of yet.
 
 The full design and the step-by-step history of how it was built are in
 `docs/superpowers/specs/2026-05-29-tawla-language-design.md` if you're curious.

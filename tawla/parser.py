@@ -5,7 +5,8 @@ us operator precedence for free: the deeper a rule sits, the tighter it binds, s
 `*`/`/` end up beating `+`/`-` without any extra bookkeeping.
 
     program := item* EOF
-    item    := class_decl | func_decl | stmt
+    item    := import_decl | class_decl | func_decl | stmt
+    import_decl := 'import' STRING ';'
     func_decl := type IDENT '(' params? ')' block
     params  := param (',' param)*
     param   := type IDENT
@@ -53,6 +54,7 @@ from .ast_nodes import (
     FuncDecl,
     Identifier,
     If,
+    Import,
     Index,
     InterfaceDecl,
     IntLiteral,
@@ -168,7 +170,9 @@ class Parser:
     def parse(self) -> list:
         items: list = []
         while self.current.kind is not TokenKind.EOF:
-            if self.current.kind is TokenKind.KW_INTERFACE:
+            if self.current.kind is TokenKind.KW_IMPORT:
+                items.append(self.import_decl())
+            elif self.current.kind is TokenKind.KW_INTERFACE:
                 items.append(self.interface_decl())
             elif self.current.kind in (TokenKind.KW_CLASS, TokenKind.KW_ABSTRACT):
                 items.append(self.class_decl())
@@ -197,6 +201,17 @@ class Parser:
         self.expect(TokenKind.SEMICOLON)
         return VarDecl(var_type, name, init)
 
+
+    def import_decl(self) -> Import:
+        self.expect(TokenKind.KW_IMPORT)
+        if self.current.kind is not TokenKind.STRING:
+            raise ParseError(
+                f"import wants a \"path\" string, got {self.current.kind.name} "
+                f"at position {self.current.pos}"
+            )
+        path = self.advance().text
+        self.expect(TokenKind.SEMICOLON)
+        return Import(path)
 
     def class_decl(self) -> ClassDecl:
         is_abstract = False
