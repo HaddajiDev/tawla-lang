@@ -1,0 +1,18 @@
+class Animal {
+    int legs;
+    Animal(int n) { this.legs = n; }
+    int legCount() { return this.legs; }
+}
+
+class Dog : Animal {
+    string name;
+    Dog(string n) {
+        super(4);
+        this.name = n;
+    }
+    string who() { return this.name; }
+}
+
+var d = new Dog("Rex");
+print(d.legCount());
+print(d.who());

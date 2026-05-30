@@ -1,0 +1,17 @@
+// A simple 2D point with a couple of methods.
+class Point {
+    int x;
+    int y;
+
+    Point(int px, int py) {
+        this.x = px;
+        this.y = py;
+    }
+
+    int sum() { return this.x + this.y; }      // x + y
+    int scaled(int k) { return this.x * k + this.y * k; }
+}
+
+var p = new Point(3, 4);
+print(p.sum());        // 7
+print(p.scaled(10));   // 70

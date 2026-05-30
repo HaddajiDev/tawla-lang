@@ -1,0 +1,8 @@
+bool isEven(int n) {
+    var half = n / 2;
+    return half * 2 == n;
+}
+
+var x = 10;
+print(isEven(x));
+print(isEven(7));

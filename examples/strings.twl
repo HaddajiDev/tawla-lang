@@ -1,0 +1,12 @@
+string greeting = "Hello, Tawla!";
+print(greeting);
+
+class Person {
+    string name;
+    Person(string n) { this.name = n; }
+    string who() { return this.name; }
+}
+
+var p = new Person("Ada");
+print(p.who());
+print("done");

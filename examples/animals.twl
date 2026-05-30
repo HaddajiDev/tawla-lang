@@ -1,0 +1,24 @@
+class Animal {
+    int legs;
+    Animal(int n) { this.legs = n; }
+    int legCount() { return this.legs; }
+    int speak() { return 0; }
+}
+
+class Dog : Animal {
+    Dog() { this.legs = 4; }
+    int speak() { return 1; }
+}
+
+class Snake : Animal {
+    Snake() { this.legs = 0; }
+    int speak() { return 2; }
+}
+
+var d = new Dog();
+print(d.legCount());
+print(d.speak());
+
+var s = new Snake();
+print(s.legCount());
+print(s.speak());

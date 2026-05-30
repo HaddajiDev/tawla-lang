@@ -1,0 +1,24 @@
+interface Shape {
+    int area();
+    int sides();
+}
+
+class Square : Shape {
+    int side;
+    Square(int s) { this.side = s; }
+    int area() { return this.side * this.side; }
+    int sides() { return 4; }
+}
+
+class Triangle : Shape {
+    int base;
+    int height;
+    Triangle(int b, int h) { this.base = b; this.height = h; }
+    int area() { return this.base * this.height / 2; }
+    int sides() { return 3; }
+}
+
+int describe(Shape s) { return s.area() + s.sides(); }
+
+print(describe(new Square(5)));
+print(describe(new Triangle(6, 4)));

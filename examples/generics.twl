@@ -1,0 +1,24 @@
+class Box<T> {
+    T value;
+    Box(T v) { this.value = v; }
+    T get() { return this.value; }
+    void set(T v) { this.value = v; }
+}
+
+class Pair<A, B> {
+    A first;
+    B second;
+    Pair(A a, B b) { this.first = a; this.second = b; }
+    A getFirst() { return this.first; }
+    B getSecond() { return this.second; }
+}
+
+var n = new Box<int>(42);
+print(n.get());
+
+var s = new Box<string>("boxed");
+print(s.get());
+
+var p = new Pair<int, string>(7, "seven");
+print(p.getFirst());
+print(p.getSecond());
