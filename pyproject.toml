@@ -1,6 +1,6 @@
 [project]
 name = "tawla"
-version = "0.1.1"
+version = "0.1.2"
 description = "The Tawla programming language and its tawlac compiler"
 readme = "README.md"
 requires-python = ">=3.11"
