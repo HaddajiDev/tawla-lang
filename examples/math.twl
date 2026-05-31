@@ -1,0 +1,20 @@
+// Predefined math functions. These aren't defined anywhere in Tawla code —
+// they're built into the compiler, like print.
+
+class Main {
+    void main() {
+        print(sqrt(2.0));        // 1.41421
+        print(pow(2.0, 10.0));   // 1024
+        print(abs(-7));          // 7
+        print(min(3, 8));        // 3
+        print(max(3, 8));        // 8
+        print(floor(3.9));       // 3
+        print(ceil(3.1));        // 4
+
+        // distance between two points, using sqrt + pow
+        int x1 = 0; int y1 = 0;
+        int x2 = 3; int y2 = 4;
+        float dist = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+        print(dist);             // 5
+    }
+}

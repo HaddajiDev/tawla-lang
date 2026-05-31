@@ -98,6 +98,13 @@ class CodeGen:
         self.exit = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [i32]), name="exit")
         self._oob_msg = self._global_string(b"array index out of bounds\n\0", "oob_msg")
 
+        unary_f = ir.FunctionType(f64, [f64])
+        self.libm_sqrt = ir.Function(self.module, unary_f, name="sqrt")
+        self.libm_floor = ir.Function(self.module, unary_f, name="floor")
+        self.libm_ceil = ir.Function(self.module, unary_f, name="ceil")
+        self.libm_fabs = ir.Function(self.module, unary_f, name="fabs")
+        self.libm_pow = ir.Function(self.module, ir.FunctionType(f64, [f64, f64]), name="pow")
+
         self.strlen = ir.Function(self.module, ir.FunctionType(i64, [i8ptr]), name="strlen")
         self.strcmp = ir.Function(self.module, ir.FunctionType(i32, [i8ptr, i8ptr]), name="strcmp")
         self.strcpy = ir.Function(self.module, ir.FunctionType(i8ptr, [i8ptr, i8ptr]), name="strcpy")
@@ -718,13 +725,10 @@ class CodeGen:
             return self._gen_method_call(node)
 
         if isinstance(node, Call):
-            if node.name not in self.functions:
-                if node.name == "collect":
-                    return self.builder.call(self.gc_collect, [])
-                if node.name == "__live":
-                    return self.builder.call(self.gc_live, [])
-            fn = self.functions[node.name]
-            return self.builder.call(fn, self._gen_args(node.args, fn.args))
+            if node.name in self.functions:
+                fn = self.functions[node.name]
+                return self.builder.call(fn, self._gen_args(node.args, fn.args))
+            return self._gen_builtin(node)
 
         if isinstance(node, UnaryOp):
             operand = self._gen_expr(node.operand)
@@ -757,6 +761,51 @@ class CodeGen:
             raise CodeGenError(f"unknown operator {node.op!r}")
 
         raise CodeGenError(f"cannot codegen expression {type(node).__name__}")
+
+    def _gen_builtin(self, node: Call) -> ir.Value:
+        """Emit a call to a predefined function. Sema has already vetted the
+        arity and argument types."""
+        name, args = node.name, node.args
+        if name == "collect":
+            return self.builder.call(self.gc_collect, [])
+        if name == "__live":
+            return self.builder.call(self.gc_live, [])
+        if name == "sqrt":
+            return self.builder.call(self.libm_sqrt, [self._as_f64(args[0])])
+        if name == "floor":
+            return self.builder.call(self.libm_floor, [self._as_f64(args[0])])
+        if name == "ceil":
+            return self.builder.call(self.libm_ceil, [self._as_f64(args[0])])
+        if name == "pow":
+            return self.builder.call(self.libm_pow, [self._as_f64(args[0]), self._as_f64(args[1])])
+        if name == "abs":
+            return self._gen_abs(self._gen_expr(args[0]))
+        if name in ("min", "max"):
+            return self._gen_minmax(name, self._gen_expr(args[0]), self._gen_expr(args[1]))
+        raise CodeGenError(f"unknown builtin {name!r}")
+
+    def _as_f64(self, expr: Expr) -> ir.Value:
+        value = self._gen_expr(expr)
+        return value if value.type == f64 else self.builder.sitofp(value, f64)
+
+    def _gen_abs(self, value: ir.Value) -> ir.Value:
+        if value.type == f64:
+            return self.builder.call(self.libm_fabs, [value])
+        neg = self.builder.sub(ir.Constant(i32, 0), value)
+        is_neg = self.builder.icmp_signed("<", value, ir.Constant(i32, 0))
+        return self.builder.select(is_neg, neg, value)
+
+    def _gen_minmax(self, name: str, a: ir.Value, b: ir.Value) -> ir.Value:
+        op = "<" if name == "min" else ">"
+        if a.type == f64 or b.type == f64:
+            if a.type != f64:
+                a = self.builder.sitofp(a, f64)
+            if b.type != f64:
+                b = self.builder.sitofp(b, f64)
+            keep_a = self.builder.fcmp_ordered(op, a, b)
+        else:
+            keep_a = self.builder.icmp_signed(op, a, b)
+        return self.builder.select(keep_a, a, b)
 
     def _gen_new(self, node: New) -> ir.Value:
         struct = self.struct_types[node.class_name]

@@ -90,10 +90,18 @@ _ARITHMETIC = {"+", "-", "*", "/"}
 _ORDERING = {"<", "<=", ">", ">="}
 _EQUALITY = {"==", "!="}
 
+# Builtins with a fixed, non-numeric signature: (param types, return type).
 _BUILTINS = {
     "collect": ([], VOID),
     "__live": ([], INT),
 }
+
+# Math builtins, keyed by name -> number of arguments. Their argument and return
+# types follow the numeric rules (int or float, ints widen), so they're checked
+# specially rather than with a fixed signature.
+_MATH_FLOAT = {"sqrt": 1, "pow": 2, "floor": 1, "ceil": 1}   # always return float
+_MATH_SAME = {"abs": 1}                                       # return matches the arg
+_MATH_WIDEST = {"min": 2, "max": 2}                           # float if any arg is float
 
 
 class Sema:
@@ -518,12 +526,14 @@ class Sema:
             return ret
 
         if isinstance(node, Call):
-            sig = self.functions.get(node.name) or _BUILTINS.get(node.name)
-            if sig is None:
-                raise SemaError(f"call to undefined function {node.name!r}")
-            params, ret = sig
-            self._check_args(node.name, params, node.args)
-            return ret
+            if node.name in self.functions:
+                params, ret = self.functions[node.name]
+                self._check_args(node.name, params, node.args)
+                return ret
+            ret = self._check_builtin(node.name, node.args)
+            if ret is not None:
+                return ret
+            raise SemaError(f"call to undefined function {node.name!r}")
 
         if isinstance(node, UnaryOp):
             operand = self._check_expr(node.operand)
@@ -560,6 +570,36 @@ class Sema:
             raise SemaError(f"unknown operator {node.op!r}")
 
         raise SemaError(f"cannot type-check expression {type(node).__name__}")
+
+    def _check_builtin(self, name: str, args: list[Expr]) -> Type | None:
+        """Type-check a call to a predefined function. Returns its result type, or
+        None if `name` isn't a builtin (so the caller can report 'undefined')."""
+        if name in _BUILTINS:
+            params, ret = _BUILTINS[name]
+            self._check_args(name, params, args)
+            return ret
+        if name in _MATH_FLOAT:
+            self._check_numeric(name, args, _MATH_FLOAT[name])
+            return FLOAT
+        if name in _MATH_SAME:
+            return self._check_numeric(name, args, _MATH_SAME[name])[0]
+        if name in _MATH_WIDEST:
+            types = self._check_numeric(name, args, _MATH_WIDEST[name])
+            return FLOAT if FLOAT in types else INT
+        return None
+
+    def _check_numeric(self, name: str, args: list[Expr], n: int) -> list[Type]:
+        if len(args) != n:
+            raise SemaError(f"{name!r} expects {n} argument(s), got {len(args)}")
+        types = []
+        for i, arg in enumerate(args):
+            t = self._check_expr(arg)
+            if t not in _NUMERIC:
+                raise SemaError(
+                    f"argument {i + 1} of {name!r} must be int or float, got {t}"
+                )
+            types.append(t)
+        return types
 
     def _check_args(self, name: str, params: list[Type], args: list[Expr]) -> None:
         if len(args) != len(params):
