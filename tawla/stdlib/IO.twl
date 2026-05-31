@@ -1,0 +1,25 @@
+// Tawla's IO library. Import it with:  import "IO.twl";
+//
+// These are ordinary Tawla functions that forward to the compiler's built-in
+// __io_* primitives. Reading grabs one line of input at a time.
+
+// Read a whole line of input and return it as a string (without the newline).
+string readLine() {
+    return __io_read_line();
+}
+
+// Read a line and parse it as an integer (0 if it isn't a number).
+int readInt() {
+    return __io_read_int();
+}
+
+// Read a line and parse it as a float (0 if it isn't a number).
+float readFloat() {
+    return __io_read_float();
+}
+
+// Print a string with no trailing newline. Handy for prompts:
+//   write("Name: "); string n = readLine();
+void write(string s) {
+    __io_write(s);
+}

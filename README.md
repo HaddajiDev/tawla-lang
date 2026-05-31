@@ -81,6 +81,9 @@ tawlac help            # or: tawlac help run
 - **Comments:** `// like this`.
 - **Imports:** split code across files with `import "other.twl";` — the path is
   relative to the file importing it, and the `.twl` is optional.
+- **IO library:** `import "IO.twl";` (a small module that ships with the
+  compiler) gives you `readLine()`, `readInt()`, `readFloat()`, and `write(s)`
+  (print with no trailing newline) for reading input and prompting.
 - **Built-in functions:** a handful of predefined functions you can call without
   declaring anything — `sqrt`, `pow`, `abs`, `min`, `max`, `floor`, `ceil` for
   math, plus `collect()`/`__live()` for the GC.

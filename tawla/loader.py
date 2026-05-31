@@ -25,6 +25,10 @@ from .parser import parse
 
 _DECLS = (ClassDecl, InterfaceDecl, FuncDecl)
 
+# Bundled standard-library modules (IO.twl, ...) live here. An import that isn't
+# found next to the importing file falls back to this directory.
+STDLIB_DIR = Path(__file__).resolve().parent / "stdlib"
+
 
 class LoadError(Exception):
     pass
@@ -76,7 +80,10 @@ def _resolve(base_dir: Path, raw: str) -> Path:
     path = Path(raw)
     if not path.suffix:
         path = path.with_suffix(".twl")
-    target = (base_dir / path).resolve()
-    if not target.is_file():
-        raise LoadError(f"cannot find imported file {raw!r} (looked for {target})")
-    return target
+    local = (base_dir / path).resolve()
+    if local.is_file():
+        return local
+    bundled = (STDLIB_DIR / path).resolve()
+    if bundled.is_file():
+        return bundled
+    raise LoadError(f"cannot find imported file {raw!r} (looked for {local})")

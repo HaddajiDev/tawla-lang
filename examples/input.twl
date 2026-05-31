@@ -1,0 +1,20 @@
+// Reading input with the IO library. Run it and type a name and a number:
+//   echo "Ada
+//   36" | tawlac run input.twl
+
+import "IO.twl";
+
+class Main {
+    void main() {
+        write("What's your name? ");
+        string name = readLine();
+
+        write("How old are you? ");
+        int age = readInt();
+
+        write("Hi ");
+        write(name);
+        print("!");
+        print(age + 1);          // your age next year
+    }
+}

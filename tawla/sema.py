@@ -91,9 +91,14 @@ _ORDERING = {"<", "<=", ">", ">="}
 _EQUALITY = {"==", "!="}
 
 # Builtins with a fixed, non-numeric signature: (param types, return type).
+# The __io_* ones are the native primitives behind stdlib/IO.twl.
 _BUILTINS = {
     "collect": ([], VOID),
     "__live": ([], INT),
+    "__io_read_int": ([], INT),
+    "__io_read_float": ([], FLOAT),
+    "__io_read_line": ([], STRING),
+    "__io_write": ([STRING], VOID),
 }
 
 # Math builtins, keyed by name -> number of arguments. Their argument and return

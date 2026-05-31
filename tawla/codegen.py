@@ -118,9 +118,14 @@ class CodeGen:
         self.gc_collect = ir.Function(self.module, ir.FunctionType(void, []), name="gc_collect")
         self.gc_live = ir.Function(self.module, ir.FunctionType(i32, []), name="gc_live")
 
+        self.io_read_int = ir.Function(self.module, ir.FunctionType(i32, []), name="io_read_int")
+        self.io_read_float = ir.Function(self.module, ir.FunctionType(f64, []), name="io_read_float")
+        self.io_read_line = ir.Function(self.module, ir.FunctionType(i8ptr, []), name="io_read_line")
+
         self._fmt_int = self._global_string(b"%d\n\0", "fmt_int")
         self._fmt_str = self._global_string(b"%s\n\0", "fmt_str")
         self._fmt_float = self._global_string(b"%g\n\0", "fmt_float")
+        self._fmt_str_raw = self._global_string(b"%s\0", "fmt_str_raw")
 
     def _global_string(self, data: bytes, name: str) -> ir.GlobalVariable:
         """Create an internal constant byte array and return the global."""
@@ -782,7 +787,24 @@ class CodeGen:
             return self._gen_abs(self._gen_expr(args[0]))
         if name in ("min", "max"):
             return self._gen_minmax(name, self._gen_expr(args[0]), self._gen_expr(args[1]))
+        if name == "__io_read_int":
+            self._flush_stdout()
+            return self.builder.call(self.io_read_int, [])
+        if name == "__io_read_float":
+            self._flush_stdout()
+            return self.builder.call(self.io_read_float, [])
+        if name == "__io_read_line":
+            self._flush_stdout()
+            return self.builder.call(self.io_read_line, [])
+        if name == "__io_write":
+            value = self._gen_expr(args[0])
+            return self.builder.call(self.printf, [self._str_ptr(self._fmt_str_raw), value])
         raise CodeGenError(f"unknown builtin {name!r}")
+
+    def _flush_stdout(self) -> None:
+        """Push any buffered output out before we block on input, so a prompt
+        printed just before a read actually shows up."""
+        self.builder.call(self.fflush, [ir.Constant(i8ptr, None)])
 
     def _as_f64(self, expr: Expr) -> ir.Value:
         value = self._gen_expr(expr)
