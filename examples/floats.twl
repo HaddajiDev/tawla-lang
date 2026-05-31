@@ -1,0 +1,30 @@
+// Floating-point numbers. 'float' and 'double' are the same 64-bit type.
+
+class Circle {
+    float r;
+    Circle(float radius) { this.r = radius; }
+    float area() { return 3.14159 * this.r * this.r; }
+}
+
+class Main {
+    void main() {
+        double x = 1.5;
+        float y = 2;            // ints widen to float automatically
+        print(x + y);           // 3.5
+
+        print(7 / 2);           // 3    (int / int is integer division)
+        print(7.0 / 2);         // 3.5  (a float makes the whole thing float)
+
+        Circle c = new Circle(2.0);
+        print(c.area());        // 12.5664
+
+        // average of an array of floats
+        float[] nums = new float[4];
+        nums[0] = 1.0; nums[1] = 2.0; nums[2] = 3.0; nums[3] = 4.0;
+        float total = 0.0;
+        for (int i = 0; i < nums.length; i = i + 1) {
+            total = total + nums[i];
+        }
+        print(total / nums.length);   // 2.5
+    }
+}

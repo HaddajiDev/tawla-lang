@@ -61,7 +61,13 @@ def tokenize(src: str) -> list[Token]:
             start = i
             while i < n and src[i].isdigit():
                 i += 1
-            tokens.append(Token(TokenKind.INT, src[start:i], start))
+            if i + 1 < n and src[i] == "." and src[i + 1].isdigit():
+                i += 1
+                while i < n and src[i].isdigit():
+                    i += 1
+                tokens.append(Token(TokenKind.FLOAT, src[start:i], start))
+            else:
+                tokens.append(Token(TokenKind.INT, src[start:i], start))
             continue
 
         if _is_ident_start(c):

@@ -1,0 +1,19 @@
+// C-style for loops: for (init; condition; step) { ... }
+
+class Main {
+    void main() {
+        // sum 1..10
+        int sum = 0;
+        for (int i = 1; i <= 10; i = i + 1) {
+            sum = sum + i;
+        }
+        print(sum);            // 55
+
+        // a multiplication table row, nested loops
+        for (int i = 1; i <= 3; i = i + 1) {
+            for (int j = 1; j <= 3; j = j + 1) {
+                print(i * j);
+            }
+        }
+    }
+}

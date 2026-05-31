@@ -10,7 +10,7 @@ us operator precedence for free: the deeper a rule sits, the tighter it binds, s
     func_decl := type IDENT '(' params? ')' block
     params  := param (',' param)*
     param   := type IDENT
-    type    := 'int' | 'bool' | IDENT          # IDENT = a class name
+    type    := 'int' | 'float' | 'double' | 'bool' | IDENT   # IDENT = a class name
 
     class_decl := 'class' IDENT (':' IDENT)? '{' member* '}'
     member     := ctor | method | field
@@ -26,6 +26,8 @@ us operator precedence for free: the deeper a rule sits, the tighter it binds, s
     print_stmt  := 'print' '(' expr ')' ';'
     if_stmt     := 'if' '(' expr ')' block ('else' (if_stmt | block))?
     while_stmt  := 'while' '(' expr ')' block
+    for_stmt    := 'for' '(' stmt? ';' expr? ';' step? ')' block
+    step        := lvalue '=' expr | expr
     return_stmt := 'return' expr ';'
     block       := '{' stmt* '}'
 
@@ -35,7 +37,7 @@ us operator precedence for free: the deeper a rule sits, the tighter it binds, s
     term       := factor (('*' | '/') factor)*
     factor     := '-' factor | postfix
     postfix    := primary ('.' IDENT arglist? )*   # field access / method call
-    primary    := INT | 'true' | 'false' | 'this' | 'new' IDENT arglist
+    primary    := INT | FLOAT | 'true' | 'false' | 'this' | 'new' IDENT arglist
                 | IDENT arglist? | '(' expr ')'
     arglist    := '(' (expr (',' expr)*)? ')'
 """
@@ -51,6 +53,8 @@ from .ast_nodes import (
     ExprStmt,
     FieldAccess,
     FieldDecl,
+    FloatLiteral,
+    For,
     FuncDecl,
     Identifier,
     If,
@@ -86,12 +90,19 @@ _COMPARISON_OPS = {
 }
 
 _TYPE_TOKENS = {
-    TokenKind.KW_INT, TokenKind.KW_BOOL, TokenKind.KW_STRING, TokenKind.KW_VOID,
+    TokenKind.KW_INT, TokenKind.KW_FLOAT, TokenKind.KW_DOUBLE,
+    TokenKind.KW_BOOL, TokenKind.KW_STRING, TokenKind.KW_VOID,
 }
 
 
 class ParseError(Exception):
     pass
+
+
+def _canon_type(name: str) -> str:
+    """`double` is just a second spelling of `float`; fold it to one name so the
+    rest of the compiler only ever deals with `float`."""
+    return "float" if name == "double" else name
 
 
 class Parser:
@@ -124,7 +135,7 @@ class Parser:
         """Consume a type and return its canonical string form. Handles type
         keywords/class names, generic args `Box<int>`, and `[]` array suffixes."""
         if self.current.kind in _TYPE_TOKENS or self.current.kind is TokenKind.IDENT:
-            name = self.advance().text
+            name = _canon_type(self.advance().text)
             if self.current.kind is TokenKind.LT:
                 self.advance()
                 args = [self.type_name()]
@@ -146,7 +157,7 @@ class Parser:
     def type_name_base(self) -> str:
         """A base type name (no `[]`): a type keyword or a class/interface IDENT."""
         if self.current.kind in _TYPE_TOKENS or self.current.kind is TokenKind.IDENT:
-            return self.advance().text
+            return _canon_type(self.advance().text)
         raise ParseError(
             f"expected a type, got {self.current.kind.name} at position {self.current.pos}"
         )
@@ -327,6 +338,8 @@ class Parser:
                 return self.if_stmt()
             case TokenKind.KW_WHILE:
                 return self.while_stmt()
+            case TokenKind.KW_FOR:
+                return self.for_stmt()
             case TokenKind.KW_RETURN:
                 return self.return_stmt()
             case TokenKind.KW_SUPER:
@@ -401,6 +414,39 @@ class Parser:
         body = self.block()
         return While(cond, body)
 
+    def for_stmt(self) -> Stmt:
+        self.expect(TokenKind.KW_FOR)
+        self.expect(TokenKind.LPAREN)
+
+        if self.current.kind is TokenKind.SEMICOLON:
+            init = None
+            self.advance()
+        elif self._is_decl_start():
+            init = self.var_decl()          # consumes its own ';'
+        else:
+            init = self.assign_or_expr_stmt()  # consumes its own ';'
+
+        cond = None if self.current.kind is TokenKind.SEMICOLON else self.expr()
+        self.expect(TokenKind.SEMICOLON)
+
+        step = None if self.current.kind is TokenKind.RPAREN else self._simple_step()
+        self.expect(TokenKind.RPAREN)
+
+        body = self.block()
+        return For(init, cond, step, body)
+
+    def _simple_step(self) -> Stmt:
+        """The third clause of a for-loop: an assignment or expression, but with
+        no trailing ';' (the ')' ends it)."""
+        expr = self.expr()
+        if self.current.kind is TokenKind.ASSIGN:
+            self.advance()
+            value = self.expr()
+            if not isinstance(expr, (Identifier, FieldAccess, Index)):
+                raise ParseError("invalid assignment target in for-loop step")
+            return Assign(expr, value)
+        return ExprStmt(expr)
+
     def return_stmt(self) -> Stmt:
         self.expect(TokenKind.KW_RETURN)
         value = None if self.current.kind is TokenKind.SEMICOLON else self.expr()
@@ -466,6 +512,10 @@ class Parser:
         if tok.kind is TokenKind.INT:
             self.advance()
             return IntLiteral(int(tok.text))
+
+        if tok.kind is TokenKind.FLOAT:
+            self.advance()
+            return FloatLiteral(float(tok.text))
 
         if tok.kind is TokenKind.STRING:
             self.advance()

@@ -56,8 +56,13 @@ tawlac help            # or: tawlac help run
 
 ## What the language can do
 
-- **The basics:** `int`, `bool`, and `string`; arithmetic and comparisons;
-  `if`/`else`, `while`, and functions (recursion works fine).
+- **The basics:** `int`, `float`/`double`, `bool`, and `string`; arithmetic and
+  comparisons; `if`/`else`, `while`, `for`, and functions (recursion works fine).
+- **Numbers:** integer math with `int`, and 64-bit floating point with `float`
+  (or `double` — same thing). Ints widen to floats automatically when you mix
+  them, so `7.0 / 2` is `3.5` while `7 / 2` stays `3`.
+- **`for` loops:** the C-style `for (int i = 0; i < n; i = i + 1) { ... }`, with
+  the loop variable scoped to the loop.
 - **`var`:** skip the type and let it be inferred — `var x = 5;`.
 - **Classes:** fields, methods, constructors, `this`, and `new`. Objects live on
   the heap.

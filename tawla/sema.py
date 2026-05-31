@@ -16,6 +16,8 @@ from .ast_nodes import (
     Expr,
     ExprStmt,
     FieldAccess,
+    FloatLiteral,
+    For,
     FuncDecl,
     Identifier,
     If,
@@ -54,9 +56,12 @@ class Type:
 
 
 INT = Type("int")
+FLOAT = Type("float")
 BOOL = Type("bool")
 STRING = Type("string")
 VOID = Type("void")
+
+_NUMERIC = {INT, FLOAT}
 
 
 class ClassInfo:
@@ -148,6 +153,8 @@ class Sema:
     def _type_from_name(self, name: str) -> Type:
         if name == "int":
             return INT
+        if name in ("float", "double"):
+            return FLOAT
         if name == "bool":
             return BOOL
         if name == "string":
@@ -207,6 +214,8 @@ class Sema:
         """True if `sub` fits where `sup` is expected: equal, a subclass, or a
         class implementing the interface `sup`."""
         if sub == sup:
+            return True
+        if sub == INT and sup == FLOAT:
             return True
         if sub.name not in self.classes:
             return False
@@ -359,8 +368,8 @@ class Sema:
 
         elif isinstance(stmt, PrintStmt):
             t = self._check_expr(stmt.expr)
-            if t not in (INT, BOOL, STRING):
-                raise SemaError(f"print expects int, bool, or string, got {t}")
+            if t not in (INT, FLOAT, BOOL, STRING):
+                raise SemaError(f"print expects int, float, bool, or string, got {t}")
 
         elif isinstance(stmt, If):
             self._require_bool(stmt.cond, "if condition")
@@ -373,6 +382,18 @@ class Sema:
             self._require_bool(stmt.cond, "while condition")
             for s in stmt.body:
                 self._check_stmt(s)
+
+        elif isinstance(stmt, For):
+            saved = dict(self.scope)   # the loop's own variable is scoped to it
+            if stmt.init is not None:
+                self._check_stmt(stmt.init)
+            if stmt.cond is not None:
+                self._require_bool(stmt.cond, "for condition")
+            if stmt.step is not None:
+                self._check_stmt(stmt.step)
+            for s in stmt.body:
+                self._check_stmt(s)
+            self.scope = saved
 
         elif isinstance(stmt, Return):
             if stmt.value is None:
@@ -415,6 +436,9 @@ class Sema:
     def _check_expr(self, node: Expr) -> Type:
         if isinstance(node, IntLiteral):
             return INT
+
+        if isinstance(node, FloatLiteral):
+            return FLOAT
 
         if isinstance(node, BoolLiteral):
             return BOOL
@@ -503,9 +527,9 @@ class Sema:
 
         if isinstance(node, UnaryOp):
             operand = self._check_expr(node.operand)
-            if operand != INT:
-                raise SemaError(f"unary '-' requires int, got {operand}")
-            return INT
+            if operand not in _NUMERIC:
+                raise SemaError(f"unary '-' requires int or float, got {operand}")
+            return operand
 
         if isinstance(node, BinaryOp):
             left = self._check_expr(node.left)
@@ -513,16 +537,16 @@ class Sema:
             if node.op in _ARITHMETIC:
                 if node.op == "+" and left == STRING and right == STRING:
                     return STRING
-                if left != INT or right != INT:
+                if left not in _NUMERIC or right not in _NUMERIC:
                     raise SemaError(
-                        f"operator {node.op!r} requires int operands, "
+                        f"operator {node.op!r} requires numeric operands, "
                         f"got {left} and {right}"
                     )
-                return INT
+                return FLOAT if FLOAT in (left, right) else INT
             if node.op in _ORDERING:
-                if left != INT or right != INT:
+                if left not in _NUMERIC or right not in _NUMERIC:
                     raise SemaError(
-                        f"operator {node.op!r} requires int operands, "
+                        f"operator {node.op!r} requires numeric operands, "
                         f"got {left} and {right}"
                     )
                 return BOOL

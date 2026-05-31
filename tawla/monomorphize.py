@@ -21,6 +21,7 @@ from .ast_nodes import (
     CtorDecl,
     ExprStmt,
     FieldAccess,
+    For,
     FuncDecl,
     If,
     Index,
@@ -169,6 +170,14 @@ class _Mono:
             )
         if isinstance(s, While):
             return replace(s, cond=self.xf_expr(s.cond, subst), body=[self.xf_stmt(x, subst) for x in s.body])
+        if isinstance(s, For):
+            return replace(
+                s,
+                init=None if s.init is None else self.xf_stmt(s.init, subst),
+                cond=None if s.cond is None else self.xf_expr(s.cond, subst),
+                step=None if s.step is None else self.xf_stmt(s.step, subst),
+                body=[self.xf_stmt(x, subst) for x in s.body],
+            )
         if isinstance(s, Return):
             return replace(s, value=None if s.value is None else self.xf_expr(s.value, subst))
         if isinstance(s, SuperCall):

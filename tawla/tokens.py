@@ -6,9 +6,12 @@ from enum import Enum, auto
 
 class TokenKind(Enum):
     INT = auto()
+    FLOAT = auto()
     STRING = auto()
     IDENT = auto()
     KW_INT = auto()
+    KW_FLOAT = auto()
+    KW_DOUBLE = auto()
     KW_BOOL = auto()
     KW_STRING = auto()
     KW_VOID = auto()
@@ -17,6 +20,7 @@ class TokenKind(Enum):
     KW_IF = auto()
     KW_ELSE = auto()
     KW_WHILE = auto()
+    KW_FOR = auto()
     KW_TRUE = auto()
     KW_FALSE = auto()
     KW_RETURN = auto()
@@ -53,6 +57,8 @@ class TokenKind(Enum):
 
 KEYWORDS = {
     "int": TokenKind.KW_INT,
+    "float": TokenKind.KW_FLOAT,
+    "double": TokenKind.KW_DOUBLE,
     "bool": TokenKind.KW_BOOL,
     "string": TokenKind.KW_STRING,
     "void": TokenKind.KW_VOID,
@@ -61,6 +67,7 @@ KEYWORDS = {
     "if": TokenKind.KW_IF,
     "else": TokenKind.KW_ELSE,
     "while": TokenKind.KW_WHILE,
+    "for": TokenKind.KW_FOR,
     "true": TokenKind.KW_TRUE,
     "false": TokenKind.KW_FALSE,
     "return": TokenKind.KW_RETURN,

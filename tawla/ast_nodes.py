@@ -17,6 +17,11 @@ class IntLiteral(Expr):
 
 
 @dataclass
+class FloatLiteral(Expr):
+    value: float
+
+
+@dataclass
 class BoolLiteral(Expr):
     value: bool
 
@@ -121,6 +126,14 @@ class If(Stmt):
 @dataclass
 class While(Stmt):
     cond: Expr
+    body: list[Stmt]
+
+
+@dataclass
+class For(Stmt):
+    init: Stmt | None
+    cond: Expr | None
+    step: Stmt | None
     body: list[Stmt]
 
 

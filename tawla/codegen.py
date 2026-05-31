@@ -18,6 +18,8 @@ from .ast_nodes import (
     Expr,
     ExprStmt,
     FieldAccess,
+    FloatLiteral,
+    For,
     FuncDecl,
     Identifier,
     If,
@@ -42,6 +44,7 @@ i32 = ir.IntType(32)
 i1 = ir.IntType(1)
 i8 = ir.IntType(8)
 i64 = ir.IntType(64)
+f64 = ir.DoubleType()
 i8ptr = i8.as_pointer()
 vtable_ptr_ty = i8ptr.as_pointer()
 
@@ -110,6 +113,7 @@ class CodeGen:
 
         self._fmt_int = self._global_string(b"%d\n\0", "fmt_int")
         self._fmt_str = self._global_string(b"%s\n\0", "fmt_str")
+        self._fmt_float = self._global_string(b"%g\n\0", "fmt_float")
 
     def _global_string(self, data: bytes, name: str) -> ir.GlobalVariable:
         """Create an internal constant byte array and return the global."""
@@ -139,6 +143,8 @@ class CodeGen:
     def _llvm_type(self, name: str) -> ir.Type:
         if name == "int":
             return i32
+        if name in ("float", "double"):
+            return f64
         if name == "bool":
             return i1
         if name == "string":
@@ -315,6 +321,8 @@ class CodeGen:
         Dog* -> Animal* (bitcast), or a class object -> interface (fat pointer)."""
         if value.type == target_ty:
             return value
+        if target_ty == f64 and value.type == i32:
+            return self.builder.sitofp(value, f64)
         if isinstance(target_ty, ir.IdentifiedStructType) and target_ty.name in self.iface_struct:
             return self._make_interface(value, target_ty.name)
         if isinstance(value.type, ir.PointerType) and isinstance(target_ty, ir.PointerType):
@@ -519,6 +527,8 @@ class CodeGen:
             value = self._gen_expr(stmt.expr)
             if value.type == i8ptr:
                 fmt = self._fmt_str
+            elif value.type == f64:
+                fmt = self._fmt_float
             else:
                 if value.type == i1:
                     value = self.builder.zext(value, i32)
@@ -532,6 +542,10 @@ class CodeGen:
 
         if isinstance(stmt, While):
             self._gen_while(stmt)
+            return
+
+        if isinstance(stmt, For):
+            self._gen_for(stmt)
             return
 
         if isinstance(stmt, Return):
@@ -588,6 +602,37 @@ class CodeGen:
         self.builder.position_at_end(end_bb)
 
 
+    def _gen_for(self, stmt: For) -> None:
+        saved = dict(self.symbols)   # match sema: the loop variable is scoped to the loop
+        if stmt.init is not None:
+            self._gen_stmt(stmt.init)
+
+        func = self.builder.function
+        cond_bb = func.append_basic_block("for.cond")
+        body_bb = func.append_basic_block("for.body")
+        step_bb = func.append_basic_block("for.step")
+        end_bb = func.append_basic_block("for.end")
+
+        self.builder.branch(cond_bb)
+        self.builder.position_at_end(cond_bb)
+        if stmt.cond is not None:
+            self.builder.cbranch(self._as_bool(self._gen_expr(stmt.cond)), body_bb, end_bb)
+        else:
+            self.builder.branch(body_bb)
+
+        self.builder.position_at_end(body_bb)
+        self._gen_block(stmt.body)
+        if not self.builder.block.is_terminated:
+            self.builder.branch(step_bb)
+
+        self.builder.position_at_end(step_bb)
+        if stmt.step is not None:
+            self._gen_stmt(stmt.step)
+        self.builder.branch(cond_bb)
+
+        self.builder.position_at_end(end_bb)
+        self.symbols = saved
+
     def _class_field_ptr(self, obj: ir.Value, field: str) -> ir.Value:
         """Pointer to obj.field, given an already-generated object pointer."""
         class_name = obj.type.pointee.name
@@ -630,6 +675,9 @@ class CodeGen:
     def _gen_expr(self, node: Expr) -> ir.Value:
         if isinstance(node, IntLiteral):
             return ir.Constant(i32, node.value)
+
+        if isinstance(node, FloatLiteral):
+            return ir.Constant(f64, node.value)
 
         if isinstance(node, BoolLiteral):
             return ir.Constant(i1, 1 if node.value else 0)
@@ -680,6 +728,8 @@ class CodeGen:
 
         if isinstance(node, UnaryOp):
             operand = self._gen_expr(node.operand)
+            if operand.type == f64:
+                return self.builder.fneg(operand)
             return self.builder.sub(ir.Constant(i32, 0), operand)
 
         if isinstance(node, BinaryOp):
@@ -691,6 +741,8 @@ class CodeGen:
                 cmp = self.builder.call(self.strcmp, [left, right])
                 op = "==" if node.op == "==" else "!="
                 return self.builder.icmp_signed(op, cmp, ir.Constant(i32, 0))
+            if left.type == f64 or right.type == f64:
+                return self._gen_float_binop(node.op, left, right)
             if node.op in _COMPARISONS:
                 return self.builder.icmp_signed(node.op, left, right)
             match node.op:
@@ -729,6 +781,26 @@ class CodeGen:
         if ctor is not None:
             self.builder.call(ctor, [obj] + self._gen_args(node.args, ctor.args[1:]))
         return obj
+
+    def _gen_float_binop(self, op: str, left: ir.Value, right: ir.Value) -> ir.Value:
+        """A binary op where at least one side is a float. Promote any int side to
+        double first, then use the floating-point instructions."""
+        if left.type != f64:
+            left = self.builder.sitofp(left, f64)
+        if right.type != f64:
+            right = self.builder.sitofp(right, f64)
+        if op in _COMPARISONS:
+            return self.builder.fcmp_ordered(op, left, right)
+        match op:
+            case "+":
+                return self.builder.fadd(left, right)
+            case "-":
+                return self.builder.fsub(left, right)
+            case "*":
+                return self.builder.fmul(left, right)
+            case "/":
+                return self.builder.fdiv(left, right)
+        raise CodeGenError(f"unknown operator {op!r}")
 
     def _gen_concat(self, a: ir.Value, b: ir.Value) -> ir.Value:
         """Concatenate two C strings into a freshly malloc'd buffer."""
