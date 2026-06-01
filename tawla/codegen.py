@@ -552,6 +552,7 @@ class CodeGen:
         if isinstance(stmt, PrintStmt):
             value = self._gen_expr(stmt.expr)
             if value.type == i8ptr:
+                self._null_check(value)
                 fmt = self._fmt_str
             elif value.type == f64:
                 fmt = self._fmt_float
@@ -661,6 +662,7 @@ class CodeGen:
 
     def _class_field_ptr(self, obj: ir.Value, field: str) -> ir.Value:
         """Pointer to obj.field, given an already-generated object pointer."""
+        self._null_check(obj)
         class_name = obj.type.pointee.name
         idx = self.field_index[class_name][field]
         return self.builder.gep(
@@ -670,11 +672,27 @@ class CodeGen:
     def _index_ptr(self, node: Index) -> ir.Value:
         """Pointer to arr[index], after a runtime bounds check."""
         arr = self._gen_expr(node.arr)
+        self._null_check(arr)
         idx = self._gen_expr(node.index)
         self._bounds_check(arr, idx)
         return self.builder.gep(
             arr, [ir.Constant(i32, 0), ir.Constant(i32, 1), idx], inbounds=True
         )
+
+    def _null_check(self, ptr: ir.Value) -> None:
+        """Abort with 'null reference' if `ptr` is null. `ptr` must be a pointer."""
+        is_null = self.builder.icmp_signed("==", ptr, ir.Constant(ptr.type, None))
+        func = self.builder.function
+        err_bb = func.append_basic_block("null.err")
+        ok_bb = func.append_basic_block("null.ok")
+        self.builder.cbranch(is_null, err_bb, ok_bb)
+
+        self.builder.position_at_end(err_bb)
+        self.builder.call(self.printf, [self._str_ptr(self._null_msg)])
+        self.builder.call(self.exit, [ir.Constant(i32, 1)])
+        self.builder.unreachable()
+
+        self.builder.position_at_end(ok_bb)
 
     def _bounds_check(self, arr: ir.Value, idx: ir.Value) -> None:
         """Abort with a message if idx is outside [0, arr.length)."""
@@ -726,8 +744,10 @@ class CodeGen:
         if isinstance(node, FieldAccess):
             obj = self._gen_expr(node.obj)
             if obj.type == i8ptr:
+                self._null_check(obj)
                 return self.builder.trunc(self.builder.call(self.strlen, [obj]), i32)
             if isinstance(obj.type.pointee, ir.LiteralStructType):
+                self._null_check(obj)
                 len_ptr = self.builder.gep(
                     obj, [ir.Constant(i32, 0), ir.Constant(i32, 0)], inbounds=True
                 )
@@ -945,8 +965,10 @@ class CodeGen:
         through an interface value it uses the itable carried in the fat pointer."""
         obj = self._gen_expr(node.obj)
         if isinstance(obj.type, ir.IdentifiedStructType) and obj.type.name in self.iface_struct:
+            self._null_check(self.builder.extract_value(obj, 0))
             return self._gen_interface_call(node, obj)
 
+        self._null_check(obj)
         static_class = obj.type.pointee.name
         slot = self.vtable_index[static_class][node.method]
         ret_ty, param_tys = self.method_sig[static_class][node.method]

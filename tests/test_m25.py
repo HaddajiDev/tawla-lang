@@ -124,3 +124,42 @@ def test_object_field_defaults_to_null(run_twl):
 def test_null_string_compares_equal(run_twl):
     src = "class Main { void main() { string s; if (s == null) { print(1); } } }"
     assert run_twl(src).stdout == "1\n"
+
+
+def _err(result):
+    return result.stdout + result.stderr
+
+
+def test_method_call_on_null_aborts(run_twl):
+    src = "class A { void hi() {} } class Main { void main() { A a = null; a.hi(); } }"
+    r = run_twl(src)
+    assert r.returncode != 0
+    assert "null reference" in _err(r)
+
+
+def test_field_access_on_null_aborts(run_twl):
+    src = "class A { int x; } class Main { void main() { A a = null; print(a.x); } }"
+    r = run_twl(src)
+    assert r.returncode != 0
+    assert "null reference" in _err(r)
+
+
+def test_index_on_null_aborts(run_twl):
+    src = "class Main { void main() { int[] a; print(a[0]); } }"
+    r = run_twl(src)
+    assert r.returncode != 0
+    assert "null reference" in _err(r)
+
+
+def test_length_on_null_aborts(run_twl):
+    src = "class Main { void main() { int[] a; print(a.length); } }"
+    r = run_twl(src)
+    assert r.returncode != 0
+    assert "null reference" in _err(r)
+
+
+def test_print_null_string_aborts(run_twl):
+    src = "class Main { void main() { string s; print(s); } }"
+    r = run_twl(src)
+    assert r.returncode != 0
+    assert "null reference" in _err(r)
