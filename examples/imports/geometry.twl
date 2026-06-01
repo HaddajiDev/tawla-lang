@@ -10,7 +10,7 @@ class Point {
         this.y = py;
     }
 
-    int sum() { return this.x + this.y; }
+    public int sum() { return this.x + this.y; }
 }
 
 int area(int w, int h) {

@@ -1,7 +1,7 @@
 class Box {
     int v;
     Box(int v) { this.v = v; }
-    int get() { return this.v; }
+    public int get() { return this.v; }
 }
 
 // Each call allocates a Box that becomes unreachable when the call returns.

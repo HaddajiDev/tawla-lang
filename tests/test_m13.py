@@ -34,7 +34,7 @@ def test_string_array(run_twl):
 
 def test_array_of_objects(run_twl):
     src = (
-        "class Cell { int v; Cell(int v) { this.v = v; } int get() { return this.v; } } "
+        "class Cell { int v; Cell(int v) { this.v = v; } public int get() { return this.v; } } "
         "Cell[] cs = new Cell[2]; cs[0] = new Cell(10); cs[1] = new Cell(20); "
         "print(cs[0].get()); print(cs[1].get());"
     )

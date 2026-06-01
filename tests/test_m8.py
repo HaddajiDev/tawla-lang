@@ -3,10 +3,10 @@
 from tawla.compiler import run_source
 
 BASE = (
-    "class Animal { int legs; Animal(int n) { this.legs = n; } "
-    "int speak() { return 0; } int legCount() { return this.legs; } } "
-    "class Dog : Animal { Dog() { this.legs = 4; } int speak() { return 1; } } "
-    "class Snake : Animal { Snake() { this.legs = 0; } int speak() { return 2; } } "
+    "class Animal { protected int legs; Animal(int n) { this.legs = n; } "
+    "public int speak() { return 0; } public int legCount() { return this.legs; } } "
+    "class Dog : Animal { Dog() { this.legs = 4; } public int speak() { return 1; } } "
+    "class Snake : Animal { Snake() { this.legs = 0; } public int speak() { return 2; } } "
 )
 
 
@@ -41,9 +41,9 @@ def test_polymorphism_over_several_objects(run_twl):
 def test_three_level_override_dispatch(run_twl):
     # C overrides; B does not. An A-typed reference to a C must call C's.
     src = (
-        "class A { A() {} int v() { return 1; } } "
+        "class A { A() {} public int v() { return 1; } } "
         "class B : A { B() {} } "
-        "class C : B { C() {} int v() { return 3; } } "
+        "class C : B { C() {} public int v() { return 3; } } "
         "A x = new C(); print(x.v());"
     )
     assert run_twl(src).stdout == "3\n"

@@ -7,7 +7,7 @@ from tawla.sema import SemaError
 
 BOX = (
     "class Box<T> { T value; Box(T v) { this.value = v; } "
-    "T get() { return this.value; } void set(T v) { this.value = v; } } "
+    "public T get() { return this.value; } public void set(T v) { this.value = v; } } "
 )
 
 
@@ -30,7 +30,7 @@ def test_two_instantiations_coexist(run_twl):
 def test_generic_with_two_params(run_twl):
     src = (
         "class Pair<A, B> { A a; B b; Pair(A a, B b) { this.a = a; this.b = b; } "
-        "A first() { return this.a; } B second() { return this.b; } } "
+        "public A first() { return this.a; } public B second() { return this.b; } } "
         'var p = new Pair<int, string>(7, "seven"); print(p.first()); print(p.second());'
     )
     assert run_twl(src).stdout == "7\nseven\n"
@@ -38,7 +38,7 @@ def test_generic_with_two_params(run_twl):
 
 def test_generic_of_class_type(run_twl):
     src = (
-        "class Cell { int v; Cell(int v) { this.v = v; } int get() { return this.v; } } "
+        "class Cell { int v; Cell(int v) { this.v = v; } public int get() { return this.v; } } "
         + BOX
         + "var b = new Box<Cell>(new Cell(99)); print(b.get().get());"
     )

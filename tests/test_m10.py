@@ -30,7 +30,7 @@ def test_string_variable(run_twl):
 def test_string_field_and_method(run_twl):
     src = (
         "class Person { string name; Person(string n) { this.name = n; } "
-        "string who() { return this.name; } } "
+        "public string who() { return this.name; } } "
         'print(new Person("Ada").who());'
     )
     assert run_twl(src).stdout == "Ada\n"

@@ -1,16 +1,16 @@
 class Box<T> {
     T value;
     Box(T v) { this.value = v; }
-    T get() { return this.value; }
-    void set(T v) { this.value = v; }
+    public T get() { return this.value; }
+    public void set(T v) { this.value = v; }
 }
 
 class Pair<A, B> {
     A first;
     B second;
     Pair(A a, B b) { this.first = a; this.second = b; }
-    A getFirst() { return this.first; }
-    B getSecond() { return this.second; }
+    public A getFirst() { return this.first; }
+    public B getSecond() { return this.second; }
 }
 
 var n = new Box<int>(42);

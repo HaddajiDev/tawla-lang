@@ -74,7 +74,7 @@ def test_float_param_and_return(run_twl):
 def test_float_field(run_twl):
     src = (
         "class Circle { float r; Circle(float radius) { this.r = radius; }"
-        " float area() { return 3.14 * this.r * this.r; } }"
+        " public float area() { return 3.14 * this.r * this.r; } }"
         " class Main { void main() { Circle c = new Circle(2.0); print(c.area()); } }"
     )
     assert run_twl(src).stdout == "12.56\n"

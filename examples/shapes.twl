@@ -1,19 +1,19 @@
 class Shape {
     Shape() {}
-    int area() { return 0; }
+    public int area() { return 0; }
 }
 
 class Square : Shape {
     int side;
     Square(int s) { this.side = s; }
-    int area() { return this.side * this.side; }
+    public int area() { return this.side * this.side; }
 }
 
 class Box : Shape {
     int w;
     int h;
     Box(int w, int h) { this.w = w; this.h = h; }
-    int area() { return this.w * this.h; }
+    public int area() { return this.w * this.h; }
 }
 
 int areaOf(Shape s) { return s.area(); }

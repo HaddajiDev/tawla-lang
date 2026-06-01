@@ -1,18 +1,18 @@
 class Animal {
-    int legs;
+    protected int legs;
     Animal(int n) { this.legs = n; }
-    int legCount() { return this.legs; }
-    int speak() { return 0; }
+    public int legCount() { return this.legs; }
+    public int speak() { return 0; }
 }
 
 class Dog : Animal {
     Dog() { this.legs = 4; }
-    int speak() { return 1; }
+    public int speak() { return 1; }
 }
 
 class Snake : Animal {
     Snake() { this.legs = 0; }
-    int speak() { return 2; }
+    public int speak() { return 2; }
 }
 
 var d = new Dog();

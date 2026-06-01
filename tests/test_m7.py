@@ -6,9 +6,9 @@ from tawla.compiler import run_source
 from tawla.sema import SemaError
 
 BASE = (
-    "class Animal { int legs; Animal(int n) { this.legs = n; } "
-    "int legCount() { return this.legs; } int speak() { return 0; } } "
-    "class Dog : Animal { Dog() { this.legs = 4; } int speak() { return 1; } } "
+    "class Animal { public int legs; Animal(int n) { this.legs = n; } "
+    "public int legCount() { return this.legs; } public int speak() { return 0; } } "
+    "class Dog : Animal { Dog() { this.legs = 4; } public int speak() { return 1; } } "
 )
 
 
@@ -44,7 +44,7 @@ def test_subtype_as_function_argument(run_twl):
 
 def test_three_level_inheritance(run_twl):
     src = (
-        "class A { int v; A() { this.v = 1; } int get() { return this.v; } } "
+        "class A { protected int v; A() { this.v = 1; } public int get() { return this.v; } } "
         "class B : A { B() { this.v = 2; } } "
         "class C : B { C() { this.v = 3; } } "
         "print(new C().get());"   # get inherited from A, reads v set by C's ctor

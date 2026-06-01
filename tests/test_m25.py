@@ -115,7 +115,7 @@ def test_default_float_is_zero(run_twl):
 
 def test_object_field_defaults_to_null(run_twl):
     src = (
-        "class Node { Node next; }"
+        "class Node { public Node next; }"
         " class Main { void main() { Node n = new Node(); if (n.next == null) { print(1); } } }"
     )
     assert run_twl(src).stdout == "1\n"
@@ -131,14 +131,14 @@ def _err(result):
 
 
 def test_method_call_on_null_aborts(run_twl):
-    src = "class A { void hi() {} } class Main { void main() { A a = null; a.hi(); } }"
+    src = "class A { public void hi() {} } class Main { void main() { A a = null; a.hi(); } }"
     r = run_twl(src)
     assert r.returncode != 0
     assert "null reference" in _err(r)
 
 
 def test_field_access_on_null_aborts(run_twl):
-    src = "class A { int x; } class Main { void main() { A a = null; print(a.x); } }"
+    src = "class A { public int x; } class Main { void main() { A a = null; print(a.x); } }"
     r = run_twl(src)
     assert r.returncode != 0
     assert "null reference" in _err(r)

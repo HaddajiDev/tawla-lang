@@ -6,10 +6,10 @@ from tawla.compiler import run_source
 from tawla.sema import SemaError
 
 ABSTRACT = (
-    "abstract class Animal { int legs; abstract int speak(); "
-    "int legCount() { return this.legs; } } "
-    "class Dog : Animal { Dog() { this.legs = 4; } int speak() { return 1; } } "
-    "class Cat : Animal { Cat() { this.legs = 4; } int speak() { return 2; } } "
+    "abstract class Animal { protected int legs; public abstract int speak(); "
+    "public int legCount() { return this.legs; } } "
+    "class Dog : Animal { Dog() { this.legs = 4; } public int speak() { return 1; } } "
+    "class Cat : Animal { Cat() { this.legs = 4; } public int speak() { return 2; } } "
 )
 
 

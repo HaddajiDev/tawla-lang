@@ -8,9 +8,9 @@ from tawla.sema import SemaError
 SHAPES = (
     "interface Shape { int area(); } "
     "class Square : Shape { int side; Square(int s) { this.side = s; } "
-    "int area() { return this.side * this.side; } } "
+    "public int area() { return this.side * this.side; } } "
     "class Box : Shape { int w; int h; Box(int w, int h) { this.w = w; this.h = h; } "
-    "int area() { return this.w * this.h; } } "
+    "public int area() { return this.w * this.h; } } "
 )
 
 
@@ -29,7 +29,7 @@ def test_interface_with_multiple_methods(run_twl):
     src = (
         "interface Shape { int area(); int sides(); } "
         "class Sq : Shape { int s; Sq(int s) { this.s = s; } "
-        "int area() { return this.s * this.s; } int sides() { return 4; } } "
+        "public int area() { return this.s * this.s; } public int sides() { return 4; } } "
         "int describe(Shape x) { return x.area() + x.sides(); } "
         "print(describe(new Sq(5)));"
     )
@@ -39,7 +39,7 @@ def test_interface_with_multiple_methods(run_twl):
 def test_class_implements_multiple_interfaces(run_twl):
     src = (
         "interface Named { int id(); } interface Sized { int size(); } "
-        "class Thing : Named, Sized { Thing() {} int id() { return 7; } int size() { return 42; } } "
+        "class Thing : Named, Sized { Thing() {} public int id() { return 7; } public int size() { return 42; } } "
         "Named n = new Thing(); Sized z = new Thing(); print(n.id()); print(z.size());"
     )
     assert run_twl(src).stdout == "7\n42\n"
@@ -48,7 +48,7 @@ def test_class_implements_multiple_interfaces(run_twl):
 def test_interface_implemented_via_base_class(run_twl):
     src = (
         "interface Greeter { int greet(); } "
-        "class Base : Greeter { Base() {} int greet() { return 1; } } "
+        "class Base : Greeter { Base() {} public int greet() { return 1; } } "
         "class Derived : Base { Derived() {} } "
         "Greeter g = new Derived(); print(g.greet());"
     )
@@ -60,7 +60,7 @@ def test_interface_in_field_and_list_of_shapes(run_twl):
     src = (
         SHAPES
         + "class Holder { Shape shape; Holder(Shape s) { this.shape = s; } "
-        + "int area() { return this.shape.area(); } } "
+        + "public int area() { return this.shape.area(); } } "
         + "print(new Holder(new Box(2, 9)).area());"
     )
     assert run_twl(src).stdout == "18\n"

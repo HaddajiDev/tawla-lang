@@ -1,17 +1,17 @@
 abstract class Animal {
-    int legs;
-    abstract int speak();
-    int legCount() { return this.legs; }
+    protected int legs;
+    public abstract int speak();
+    public int legCount() { return this.legs; }
 }
 
 class Dog : Animal {
     Dog() { this.legs = 4; }
-    int speak() { return 1; }
+    public int speak() { return 1; }
 }
 
 class Cat : Animal {
     Cat() { this.legs = 4; }
-    int speak() { return 2; }
+    public int speak() { return 2; }
 }
 
 int callSpeak(Animal a) { return a.speak(); }

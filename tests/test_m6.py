@@ -8,8 +8,8 @@ from tawla.sema import SemaError
 POINT = (
     "class Point { int x; int y; "
     "Point(int px, int py) { this.x = px; this.y = py; } "
-    "int sum() { return this.x + this.y; } "
-    "int scaled(int k) { return this.x * k + this.y * k; } } "
+    "public int sum() { return this.x + this.y; } "
+    "public int scaled(int k) { return this.x * k + this.y * k; } } "
 )
 
 
@@ -24,7 +24,7 @@ def test_method_with_param(run_twl):
 def test_field_mutation_and_method_call_statement(run_twl):
     src = (
         "class Acc { int n; Acc() { this.n = 0; } "
-        "int add(int x) { this.n = this.n + x; return this.n; } } "
+        "public int add(int x) { this.n = this.n + x; return this.n; } } "
         "var a = new Acc(); a.add(5); a.add(5); print(a.add(0));"
     )
     assert run_twl(src).stdout == "10\n"
@@ -33,7 +33,7 @@ def test_field_mutation_and_method_call_statement(run_twl):
 def test_instances_are_independent(run_twl):
     src = (
         "class Acc { int n; Acc() { this.n = 0; } "
-        "int add(int x) { this.n = this.n + x; return this.n; } } "
+        "public int add(int x) { this.n = this.n + x; return this.n; } } "
         "var a = new Acc(); var b = new Acc(); "
         "a.add(5); b.add(100); print(a.add(0)); print(b.add(0));"
     )
@@ -43,8 +43,8 @@ def test_instances_are_independent(run_twl):
 def test_name_mangling_avoids_collision(run_twl):
     # Both classes have a method named `value`; mangling keeps them distinct.
     src = (
-        "class A { A() {} int value() { return 1; } } "
-        "class B { B() {} int value() { return 2; } } "
+        "class A { A() {} public int value() { return 1; } } "
+        "class B { B() {} public int value() { return 2; } } "
         "print(new A().value()); print(new B().value());"
     )
     assert run_twl(src).stdout == "1\n2\n"
@@ -52,7 +52,7 @@ def test_name_mangling_avoids_collision(run_twl):
 
 def test_object_as_function_arg_and_field_read(run_twl):
     src = (
-        "class Box { int v; Box(int v) { this.v = v; } } "
+        "class Box { public int v; Box(int v) { this.v = v; } } "
         "int unbox(Box b) { return b.v; } "
         "print(unbox(new Box(42)));"
     )
@@ -61,7 +61,7 @@ def test_object_as_function_arg_and_field_read(run_twl):
 
 def test_bool_field(run_twl):
     src = (
-        "class Flag { bool on; Flag(bool v) { this.on = v; } bool get() { return this.on; } } "
+        "class Flag { bool on; Flag(bool v) { this.on = v; } public bool get() { return this.on; } } "
         "print(new Flag(true).get());"
     )
     assert run_twl(src).stdout == "1\n"

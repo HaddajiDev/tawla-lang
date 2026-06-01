@@ -4,7 +4,7 @@ print(greeting);
 class Person {
     string name;
     Person(string n) { this.name = n; }
-    string who() { return this.name; }
+    public string who() { return this.name; }
 }
 
 var p = new Person("Ada");

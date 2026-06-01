@@ -3,7 +3,7 @@
 class Circle {
     float r;
     Circle(float radius) { this.r = radius; }
-    float area() { return 3.14159 * this.r * this.r; }
+    public float area() { return 3.14159 * this.r * this.r; }
 }
 
 class Main {

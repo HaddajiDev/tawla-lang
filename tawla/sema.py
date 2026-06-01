@@ -73,6 +73,9 @@ class ClassInfo:
         self.interfaces: set[str] = set()
         self.fields: dict[str, Type] = {}
         self.methods: dict[str, tuple[list[Type], Type]] = {}
+        self.field_vis: dict[str, tuple[str, str]] = {}   # name -> (visibility, owner class)
+        self.method_vis: dict[str, tuple[str, str]] = {}
+        self.ctor_vis: str = "public"
         self.ctor: list[Type] | None = None
         self.is_abstract: bool = False
         self.abstract_methods: set[str] = set()
@@ -224,6 +227,30 @@ class Sema:
                         f"method {mname!r} in class {c.name!r} does not match "
                         f"interface {iface!r}"
                     )
+                if info.method_vis[mname][0] != "public":
+                    raise SemaError(
+                        f"method {mname!r} implements interface {iface!r} and must be public"
+                    )
+
+    def _same_or_subclass(self, cls: str | None, owner: str) -> bool:
+        name = cls
+        while name is not None:
+            if name == owner:
+                return True
+            name = self.classes[name].parent if name in self.classes else None
+        return False
+
+    def _check_access(self, visibility: str, owner: str, what: str) -> None:
+        if visibility == "public":
+            return
+        if visibility == "private":
+            if self.current_class != owner:
+                raise SemaError(f"{what} is private to class {owner!r}")
+        elif visibility == "protected":
+            if not self._same_or_subclass(self.current_class, owner):
+                raise SemaError(
+                    f"{what} is protected; only {owner!r} and its subclasses may use it"
+                )
 
     def _is_reference(self, t: Type) -> bool:
         """True for types that can hold null: string, arrays, classes, interfaces."""
@@ -277,12 +304,15 @@ class Sema:
             info.interfaces |= base.interfaces
             info.fields.update(base.fields)
             info.methods.update(base.methods)
+            info.field_vis.update(base.field_vis)
+            info.method_vis.update(base.method_vis)
             info.abstract_methods = set(base.abstract_methods)
 
         for fld in c.fields:
             if fld.name in info.fields:
                 raise SemaError(f"field {fld.name!r} in class {name!r} shadows another")
             info.fields[fld.name] = self._type_from_name(fld.var_type)
+            info.field_vis[fld.name] = (fld.visibility, name)
         for m in c.methods:
             sig = ([self._type_from_name(p.var_type) for p in m.params],
                    self._return_type(m.ret_type))
@@ -291,8 +321,16 @@ class Sema:
                     f"method {m.name!r} in class {name!r} does not match the "
                     f"signature it overrides"
                 )
+            if m.name in info.method_vis and info.method_vis[m.name][0] != m.visibility:
+                raise SemaError(
+                    f"override of method {m.name!r} in class {name!r} must keep "
+                    f"visibility {info.method_vis[m.name][0]!r}"
+                )
             info.methods[m.name] = sig
+            info.method_vis[m.name] = (m.visibility, name)
             if m.is_abstract:
+                if m.visibility == "private":
+                    raise SemaError(f"abstract method {m.name!r} cannot be private")
                 if not c.is_abstract:
                     raise SemaError(
                         f"abstract method {m.name!r} in non-abstract class {name!r}"
@@ -302,6 +340,7 @@ class Sema:
                 info.abstract_methods.discard(m.name)
         if c.ctor is not None:
             info.ctor = [self._type_from_name(p.var_type) for p in c.ctor.params]
+            info.ctor_vis = c.ctor.visibility
 
         if not c.is_abstract and info.abstract_methods:
             missing = ", ".join(sorted(info.abstract_methods))
@@ -512,6 +551,8 @@ class Sema:
                     )
             else:
                 self._check_args(node.class_name, info.ctor, node.args)
+            self._check_access(info.ctor_vis, node.class_name,
+                               f"constructor of {node.class_name!r}")
             return Type(node.class_name)
 
         if isinstance(node, NewArray):
@@ -543,6 +584,8 @@ class Sema:
                 raise SemaError(f"type {obj_type} has no fields")
             if node.field not in info.fields:
                 raise SemaError(f"class {obj_type} has no field {node.field!r}")
+            vis, owner = info.field_vis[node.field]
+            self._check_access(vis, owner, f"field {node.field!r}")
             return info.fields[node.field]
 
         if isinstance(node, MethodCall):
@@ -556,6 +599,9 @@ class Sema:
                 raise SemaError(f"type {obj_type} has no methods")
             if node.method not in methods:
                 raise SemaError(f"type {obj_type} has no method {node.method!r}")
+            if obj_type.name in self.classes:
+                vis, owner = self.classes[obj_type.name].method_vis[node.method]
+                self._check_access(vis, owner, f"method {node.method!r}")
             params, ret = methods[node.method]
             self._check_args(node.method, params, node.args)
             return ret

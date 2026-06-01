@@ -107,7 +107,7 @@ def test_import_runs_end_to_end(tmp_path):
     (tmp_path / "geometry.twl").write_text(
         "class Point { int x; int y;"
         " Point(int a, int b) { this.x = a; this.y = b; }"
-        " int sum() { return this.x + this.y; } }"
+        " public int sum() { return this.x + this.y; } }"
         " int area(int w, int h) { return w * h; }",
         encoding="utf-8",
     )
@@ -131,7 +131,7 @@ def test_imported_interface_and_class(tmp_path):
     (tmp_path / "shapes.twl").write_text(
         "interface Shape { int area(); }"
         " class Square : Shape { int s;"
-        " Square(int x) { this.s = x; } int area() { return this.s * this.s; } }",
+        " Square(int x) { this.s = x; } public int area() { return this.s * this.s; } }",
         encoding="utf-8",
     )
     entry = tmp_path / "main.twl"

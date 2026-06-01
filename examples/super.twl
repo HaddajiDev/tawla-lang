@@ -1,7 +1,7 @@
 class Animal {
     int legs;
     Animal(int n) { this.legs = n; }
-    int legCount() { return this.legs; }
+    public int legCount() { return this.legs; }
 }
 
 class Dog : Animal {
@@ -10,7 +10,7 @@ class Dog : Animal {
         super(4);
         this.name = n;
     }
-    string who() { return this.name; }
+    public string who() { return this.name; }
 }
 
 var d = new Dog("Rex");

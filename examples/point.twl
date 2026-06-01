@@ -8,8 +8,8 @@ class Point {
         this.y = py;
     }
 
-    int sum() { return this.x + this.y; }      // x + y
-    int scaled(int k) { return this.x * k + this.y * k; }
+    public int sum() { return this.x + this.y; }      // x + y
+    public int scaled(int k) { return this.x * k + this.y * k; }
 }
 
 var p = new Point(3, 4);

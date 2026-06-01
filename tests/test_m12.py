@@ -7,7 +7,7 @@ from tawla.sema import SemaError
 
 BASE = (
     "class Animal { int legs; Animal(int n) { this.legs = n; } "
-    "int legCount() { return this.legs; } } "
+    "public int legCount() { return this.legs; } } "
 )
 
 
@@ -24,7 +24,7 @@ def test_super_then_own_field(run_twl):
     src = (
         BASE
         + "class Dog : Animal { int tail; Dog(int t) { super(4); this.tail = t; } "
-        + "int tailLen() { return this.tail; } } "
+        + "public int tailLen() { return this.tail; } } "
         + "var d = new Dog(9); print(d.legCount()); print(d.tailLen());"
     )
     assert run_twl(src).stdout == "4\n9\n"

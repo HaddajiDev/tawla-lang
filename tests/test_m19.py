@@ -4,7 +4,7 @@ from tawla.compiler import run_source
 from tawla.sema import SemaError
 import pytest
 
-BOX = "class Box { int v; Box(int v) { this.v = v; } int get() { return this.v; } } "
+BOX = "class Box { int v; Box(int v) { this.v = v; } public int get() { return this.v; } } "
 WASTE = "void waste() { var x = new Box(0); } "
 
 
@@ -29,7 +29,7 @@ def test_reachable_through_field_survives(run_twl):
     # `a` is a root; `a.next` is reachable only through a's field. Conservative
     # interior scanning must keep both alive.
     src = (
-        "class Node { Node next; int v; Node(int v) { this.v = v; } } "
+        "class Node { public Node next; public int v; Node(int v) { this.v = v; } } "
         + WASTE.replace("Box", "Node")
         + "var a = new Node(1); a.next = new Node(2); "
         + "int i = 0; while (i < 5) { waste(); i = i + 1; } "
@@ -51,7 +51,7 @@ def test_program_correctness_unaffected_by_gc(run_twl):
     # right answer (no premature frees corrupting live data).
     src = (
         "class Counter { int n; Counter() { this.n = 0; } "
-        "void add(int x) { this.n = this.n + x; } int get() { return this.n; } } "
+        "public void add(int x) { this.n = this.n + x; } public int get() { return this.n; } } "
         "var c = new Counter(); int i = 1; "
         "while (i <= 100) { c.add(i); collect(); i = i + 1; } "
         "print(c.get());"

@@ -2,7 +2,7 @@
 // (defaulting to 0 / false / null).
 
 class Account {
-    int balance;
+    public int balance;
 }
 
 class Main {
