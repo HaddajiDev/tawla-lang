@@ -27,6 +27,7 @@ from .ast_nodes import (
     MethodCall,
     New,
     NewArray,
+    NullLiteral,
     PrintStmt,
     Return,
     Stmt,
@@ -60,6 +61,7 @@ FLOAT = Type("float")
 BOOL = Type("bool")
 STRING = Type("string")
 VOID = Type("void")
+NULL = Type("null")
 
 _NUMERIC = {INT, FLOAT}
 
@@ -223,6 +225,14 @@ class Sema:
                         f"interface {iface!r}"
                     )
 
+    def _is_reference(self, t: Type) -> bool:
+        """True for types that can hold null: string, arrays, classes, interfaces."""
+        if t == STRING:
+            return True
+        if t.name.endswith("[]"):
+            return True
+        return t.name in self.classes or t.name in self.interfaces
+
     def _is_subtype(self, sub: Type, sup: Type) -> bool:
         """True if `sub` fits where `sup` is expected: equal, a subclass, or a
         class implementing the interface `sup`."""
@@ -230,6 +240,8 @@ class Sema:
             return True
         if sub == INT and sup == FLOAT:
             return True
+        if sub == NULL:
+            return self._is_reference(sup)
         if sub.name not in self.classes:
             return False
         info = self.classes[sub.name]
@@ -336,10 +348,25 @@ class Sema:
 
     def _check_stmt(self, stmt: Stmt) -> None:
         if isinstance(stmt, VarDecl):
+            if stmt.init is None:
+                if stmt.var_type == "var":
+                    raise SemaError(
+                        f"variable {stmt.name!r} declared with 'var' needs an initializer"
+                    )
+                declared = self._type_from_name(stmt.var_type)
+                if stmt.name in self.scope:
+                    raise SemaError(f"variable {stmt.name!r} already declared")
+                self.scope[stmt.name] = declared
+                return
             init_type = self._check_expr(stmt.init)
             if init_type == VOID:
                 raise SemaError(f"cannot assign void to variable {stmt.name!r}")
             if stmt.var_type == "var":
+                if init_type == NULL:
+                    raise SemaError(
+                        f"cannot infer a type for {stmt.name!r} from null; "
+                        f"give it an explicit type"
+                    )
                 declared = init_type
                 stmt.var_type = declared.name
             else:
@@ -452,6 +479,9 @@ class Sema:
 
         if isinstance(node, FloatLiteral):
             return FLOAT
+
+        if isinstance(node, NullLiteral):
+            return NULL
 
         if isinstance(node, BoolLiteral):
             return BOOL
