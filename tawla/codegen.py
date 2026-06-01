@@ -29,6 +29,7 @@ from .ast_nodes import (
     MethodCall,
     New,
     NewArray,
+    NullLiteral,
     PrintStmt,
     Return,
     Stmt,
@@ -127,6 +128,10 @@ class CodeGen:
         self._fmt_float = self._global_string(b"%g\n\0", "fmt_float")
         self._fmt_str_raw = self._global_string(b"%s\0", "fmt_str_raw")
 
+        self.null_ty = self.module.context.get_identified_type("$null")  # stays opaque
+        self.null_ptr = self.null_ty.as_pointer()
+        self._null_msg = self._global_string(b"null reference\n\0", "null_msg")
+
     def _global_string(self, data: bytes, name: str) -> ir.GlobalVariable:
         """Create an internal constant byte array and return the global."""
         arr = bytearray(data)
@@ -180,7 +185,11 @@ class CodeGen:
 
     @staticmethod
     def _zero(ty: ir.Type) -> ir.Constant:
-        return ir.Constant(ty, None if isinstance(ty, ir.PointerType) else 0)
+        if isinstance(ty, ir.PointerType):
+            return ir.Constant(ty, None)
+        if isinstance(ty, (ir.IdentifiedStructType, ir.LiteralStructType)):
+            return ir.Constant(ty, None)   # zeroinitializer (e.g. interface fat pointer)
+        return ir.Constant(ty, 0)
 
 
     def generate(self, items: list) -> ir.Module:
@@ -333,6 +342,8 @@ class CodeGen:
         Dog* -> Animal* (bitcast), or a class object -> interface (fat pointer)."""
         if value.type == target_ty:
             return value
+        if value.type == self.null_ptr:
+            return ir.Constant(target_ty, None)   # typed null pointer / zero fat pointer
         if target_ty == f64 and value.type == i32:
             return self.builder.sitofp(value, f64)
         if isinstance(target_ty, ir.IdentifiedStructType) and target_ty.name in self.iface_struct:
@@ -501,7 +512,10 @@ class CodeGen:
             if stmt.name in self.symbols:
                 raise CodeGenError(f"variable {stmt.name!r} already declared")
             slot_ty = self._llvm_type(stmt.var_type)
-            value = self._coerce(self._gen_expr(stmt.init), slot_ty)
+            if stmt.init is None:
+                value = self._zero(slot_ty)
+            else:
+                value = self._coerce(self._gen_expr(stmt.init), slot_ty)
             slot = self._alloca(stmt.name, slot_ty)
             self.builder.store(value, slot)
             self.symbols[stmt.name] = slot
@@ -691,6 +705,9 @@ class CodeGen:
         if isinstance(node, FloatLiteral):
             return ir.Constant(f64, node.value)
 
+        if isinstance(node, NullLiteral):
+            return ir.Constant(self.null_ptr, None)
+
         if isinstance(node, BoolLiteral):
             return ir.Constant(i1, 1 if node.value else 0)
 
@@ -744,6 +761,10 @@ class CodeGen:
         if isinstance(node, BinaryOp):
             left = self._gen_expr(node.left)
             right = self._gen_expr(node.right)
+            if node.op in ("==", "!=") and (
+                left.type == self.null_ptr or right.type == self.null_ptr
+            ):
+                return self._gen_null_compare(node.op, left, right)
             if left.type == i8ptr:
                 if node.op == "+":
                     return self._gen_concat(left, right)
@@ -872,6 +893,17 @@ class CodeGen:
             case "/":
                 return self.builder.fdiv(left, right)
         raise CodeGenError(f"unknown operator {op!r}")
+
+    def _gen_null_compare(self, op: str, left: ir.Value, right: ir.Value) -> ir.Value:
+        """Compare a reference value against null. One or both sides are the null
+        sentinel; coerce the sentinel to the other side's representation first."""
+        if left.type == self.null_ptr and right.type == self.null_ptr:
+            return ir.Constant(i1, 1 if op == "==" else 0)
+        ref = right if left.type == self.null_ptr else left
+        if isinstance(ref.type, ir.IdentifiedStructType) and ref.type.name in self.iface_struct:
+            obj = self.builder.extract_value(ref, 0)
+            return self.builder.icmp_signed(op, obj, ir.Constant(i8ptr, None))
+        return self.builder.icmp_signed(op, ref, ir.Constant(ref.type, None))
 
     def _gen_concat(self, a: ir.Value, b: ir.Value) -> ir.Value:
         """Concatenate two C strings into a freshly malloc'd buffer."""

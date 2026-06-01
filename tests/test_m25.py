@@ -82,3 +82,45 @@ def test_compare_reference_to_null_ok():
 def test_compare_int_to_null_is_error():
     with pytest.raises(SemaError):
         _sema("class Main { void main() { int x = 0; if (x == null) {} } }")
+
+
+def test_null_equality_true(run_twl):
+    src = (
+        "class A {} class Main { void main() {"
+        " A a = null; if (a == null) { print(1); } else { print(2); } } }"
+    )
+    assert run_twl(src).stdout == "1\n"
+
+
+def test_reassign_makes_not_null(run_twl):
+    src = (
+        "class A { int x; } class Main { void main() {"
+        " A a = null; a = new A(); if (a != null) { print(1); } } }"
+    )
+    assert run_twl(src).stdout == "1\n"
+
+
+def test_default_int_is_zero(run_twl):
+    assert run_twl("class Main { void main() { int x; print(x); } }").stdout == "0\n"
+
+
+def test_default_bool_is_false(run_twl):
+    src = "class Main { void main() { bool b; if (b) { print(1); } else { print(0); } } }"
+    assert run_twl(src).stdout == "0\n"
+
+
+def test_default_float_is_zero(run_twl):
+    assert run_twl("class Main { void main() { float f; print(f); } }").stdout == "0\n"
+
+
+def test_object_field_defaults_to_null(run_twl):
+    src = (
+        "class Node { Node next; }"
+        " class Main { void main() { Node n = new Node(); if (n.next == null) { print(1); } } }"
+    )
+    assert run_twl(src).stdout == "1\n"
+
+
+def test_null_string_compares_equal(run_twl):
+    src = "class Main { void main() { string s; if (s == null) { print(1); } } }"
+    assert run_twl(src).stdout == "1\n"
