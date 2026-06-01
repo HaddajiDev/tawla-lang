@@ -64,6 +64,11 @@ tawlac help            # or: tawlac help run
 - **`for` loops:** the C-style `for (int i = 0; i < n; i = i + 1) { ... }`, with
   the loop variable scoped to the loop.
 - **`var`:** skip the type and let it be inferred — `var x = 5;`.
+- **`null` & defaults:** reference types (objects, strings, arrays) can be
+  `null`, and a declaration can skip the initializer — `int x;` is `0`,
+  `bool b;` is `false`, `User u;` is `null`. Using a `null` (calling a method,
+  reading a field, indexing) gives a clean "null reference" error instead of a
+  crash. Value types (`int`, `float`, `bool`) can't be null.
 - **Classes:** fields, methods, constructors, `this`, and `new`. Objects live on
   the heap.
 - **Inheritance:** `class Dog : Animal { ... }`, with method overriding and

@@ -1,0 +1,21 @@
+// null lets a reference be "absent", and declarations can skip the initializer
+// (defaulting to 0 / false / null).
+
+class Account {
+    int balance;
+}
+
+class Main {
+    void main() {
+        Account a;                  // no initializer -> null
+        if (a == null) {
+            print("no account yet");
+        }
+
+        a = new Account();          // balance defaults to 0
+        print(a.balance);           // 0
+
+        int count;                  // defaults to 0
+        print(count);               // 0
+    }
+}
