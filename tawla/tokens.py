@@ -23,6 +23,7 @@ class TokenKind(Enum):
     KW_FOR = auto()
     KW_TRUE = auto()
     KW_FALSE = auto()
+    KW_NULL = auto()
     KW_RETURN = auto()
     KW_CLASS = auto()
     KW_NEW = auto()
@@ -70,6 +71,7 @@ KEYWORDS = {
     "for": TokenKind.KW_FOR,
     "true": TokenKind.KW_TRUE,
     "false": TokenKind.KW_FALSE,
+    "null": TokenKind.KW_NULL,
     "return": TokenKind.KW_RETURN,
     "class": TokenKind.KW_CLASS,
     "new": TokenKind.KW_NEW,

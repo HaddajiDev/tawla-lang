@@ -67,6 +67,7 @@ from .ast_nodes import (
     MethodSig,
     New,
     NewArray,
+    NullLiteral,
     Param,
     PrintStmt,
     Return,
@@ -528,6 +529,10 @@ class Parser:
         if tok.kind is TokenKind.KW_FALSE:
             self.advance()
             return BoolLiteral(False)
+
+        if tok.kind is TokenKind.KW_NULL:
+            self.advance()
+            return NullLiteral()
 
         if tok.kind is TokenKind.KW_THIS:
             self.advance()

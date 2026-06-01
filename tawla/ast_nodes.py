@@ -22,6 +22,11 @@ class FloatLiteral(Expr):
 
 
 @dataclass
+class NullLiteral(Expr):
+    pass
+
+
+@dataclass
 class BoolLiteral(Expr):
     value: bool
 
