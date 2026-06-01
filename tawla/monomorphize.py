@@ -156,7 +156,8 @@ class _Mono:
     def xf_stmt(self, s, subst):
         if isinstance(s, VarDecl):
             vt = s.var_type if s.var_type == "var" else self.xf_type(s.var_type, subst)
-            return replace(s, var_type=vt, init=self.xf_expr(s.init, subst))
+            init = None if s.init is None else self.xf_expr(s.init, subst)
+            return replace(s, var_type=vt, init=init)
         if isinstance(s, Assign):
             return replace(s, target=self.xf_expr(s.target, subst), value=self.xf_expr(s.value, subst))
         if isinstance(s, (ExprStmt, PrintStmt)):

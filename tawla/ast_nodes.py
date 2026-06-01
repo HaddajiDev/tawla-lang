@@ -102,7 +102,7 @@ class BinaryOp(Expr):
 class VarDecl(Stmt):
     var_type: str
     name: str
-    init: Expr
+    init: Expr | None
 
 
 @dataclass

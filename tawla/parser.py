@@ -208,8 +208,11 @@ class Parser:
         return FuncDecl(ret_type, name, params, body)
 
     def _finish_var(self, var_type: str, name: str) -> Stmt:
-        self.expect(TokenKind.ASSIGN)
-        init = self.expr()
+        if self.current.kind is TokenKind.ASSIGN:
+            self.advance()
+            init = self.expr()
+        else:
+            init = None
         self.expect(TokenKind.SEMICOLON)
         return VarDecl(var_type, name, init)
 
