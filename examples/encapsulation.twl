@@ -1,0 +1,19 @@
+// Access control: members are private by default. Use public/protected to widen.
+
+class Counter {
+    private int count;          // hidden from the outside
+
+    public Counter() { this.count = 0; }
+    public void bump() { this.count = this.count + 1; }
+    public int value() { return this.count; }
+}
+
+class Main {
+    void main() {
+        Counter c = new Counter();
+        c.bump();
+        c.bump();
+        print(c.value());       // 2
+        // c.count here would be a compile error: count is private
+    }
+}

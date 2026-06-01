@@ -73,6 +73,10 @@ tawlac help            # or: tawlac help run
   the heap.
 - **Inheritance:** `class Dog : Animal { ... }`, with method overriding and
   `super(...)` to call the base constructor.
+- **Encapsulation:** members are `private` by default; mark them `public` to
+  expose them or `protected` to share with subclasses. Constructors are `public`
+  by default. Access is checked at compile time. (Heads up: code written for
+  Tawla 0.x needs `public` added to anything used across class boundaries.)
 - **Polymorphism:** methods are virtual, so the right one gets picked at runtime
   based on the actual object type (this is done with vtables).
 - **Interfaces:** `interface Shape { int area(); }`, and any class can implement
