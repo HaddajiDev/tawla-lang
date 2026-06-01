@@ -174,6 +174,7 @@ class FuncDecl:
 class FieldDecl:
     var_type: str
     name: str
+    visibility: str = "private"
 
 
 @dataclass
@@ -183,6 +184,7 @@ class MethodDecl:
     params: list[Param]
     body: list[Stmt]
     is_abstract: bool = False
+    visibility: str = "private"
 
 
 @dataclass
@@ -196,6 +198,7 @@ class MethodSig:
 class CtorDecl:
     params: list[Param]
     body: list[Stmt]
+    visibility: str = "public"
 
 
 @dataclass

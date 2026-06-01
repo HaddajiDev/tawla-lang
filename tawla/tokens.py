@@ -24,6 +24,9 @@ class TokenKind(Enum):
     KW_TRUE = auto()
     KW_FALSE = auto()
     KW_NULL = auto()
+    KW_PUBLIC = auto()
+    KW_PROTECTED = auto()
+    KW_PRIVATE = auto()
     KW_RETURN = auto()
     KW_CLASS = auto()
     KW_NEW = auto()
@@ -80,6 +83,9 @@ KEYWORDS = {
     "abstract": TokenKind.KW_ABSTRACT,
     "super": TokenKind.KW_SUPER,
     "import": TokenKind.KW_IMPORT,
+    "public": TokenKind.KW_PUBLIC,
+    "protected": TokenKind.KW_PROTECTED,
+    "private": TokenKind.KW_PRIVATE,
 }
 
 

@@ -95,6 +95,12 @@ _TYPE_TOKENS = {
     TokenKind.KW_BOOL, TokenKind.KW_STRING, TokenKind.KW_VOID,
 }
 
+_VISIBILITY = {
+    TokenKind.KW_PUBLIC: "public",
+    TokenKind.KW_PROTECTED: "protected",
+    TokenKind.KW_PRIVATE: "private",
+}
+
 
 class ParseError(Exception):
     pass
@@ -262,26 +268,32 @@ class Parser:
         while self.current.kind is not TokenKind.RBRACE:
             if self.current.kind is TokenKind.EOF:
                 raise ParseError(f"unexpected end of input: missing '}}' for class {name!r}")
+            visibility = None
+            if self.current.kind in _VISIBILITY:
+                visibility = _VISIBILITY[self.advance().kind]
             if self.current.kind is TokenKind.KW_ABSTRACT:
                 self.advance()
                 ret_type = self.type_name()
                 mname = self.expect(TokenKind.IDENT).text
                 params = self.param_list()
                 self.expect(TokenKind.SEMICOLON)
-                methods.append(MethodDecl(ret_type, mname, params, [], is_abstract=True))
+                methods.append(MethodDecl(
+                    ret_type, mname, params, [], is_abstract=True,
+                    visibility=visibility or "private",
+                ))
             elif self.current.kind is TokenKind.IDENT and self.current.text == name \
                     and self.peek(1).kind is TokenKind.LPAREN:
                 if ctor is not None:
                     raise ParseError(f"class {name!r} has more than one constructor")
-                ctor = self.ctor_decl()
+                ctor = self.ctor_decl(visibility or "public")
             else:
                 member_type = self.type_name()
                 member_name = self.expect(TokenKind.IDENT).text
                 if self.current.kind is TokenKind.LPAREN:
-                    methods.append(self.method_decl(member_type, member_name))
+                    methods.append(self.method_decl(member_type, member_name, visibility or "private"))
                 else:
                     self.expect(TokenKind.SEMICOLON)
-                    fields.append(FieldDecl(member_type, member_name))
+                    fields.append(FieldDecl(member_type, member_name, visibility or "private"))
 
         self.expect(TokenKind.RBRACE)
         return ClassDecl(
@@ -305,16 +317,16 @@ class Parser:
         self.expect(TokenKind.RBRACE)
         return InterfaceDecl(name, methods)
 
-    def ctor_decl(self) -> CtorDecl:
+    def ctor_decl(self, visibility: str) -> CtorDecl:
         self.advance()
         params = self.param_list()
         body = self.block()
-        return CtorDecl(params, body)
+        return CtorDecl(params, body, visibility)
 
-    def method_decl(self, ret_type: str, name: str) -> MethodDecl:
+    def method_decl(self, ret_type: str, name: str, visibility: str) -> MethodDecl:
         params = self.param_list()
         body = self.block()
-        return MethodDecl(ret_type, name, params, body)
+        return MethodDecl(ret_type, name, params, body, visibility=visibility)
 
     def param_list(self) -> list[Param]:
         self.expect(TokenKind.LPAREN)
