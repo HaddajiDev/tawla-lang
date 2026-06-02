@@ -15,9 +15,9 @@ def test_lexer_two_char_operators():
     ]
 
 
-def test_lexer_lone_bang_is_error():
-    with pytest.raises(Exception):
-        tokenize("a ! b")
+def test_lexer_lone_bang_is_not_operator():
+    # `!` on its own is the logical-not operator (M28); only `&`/`|` alone are errors.
+    assert tokenize("!")[0].kind is TokenKind.NOT
 
 
 @pytest.mark.parametrize(

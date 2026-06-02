@@ -31,11 +31,13 @@ us operator precedence for free: the deeper a rule sits, the tighter it binds, s
     return_stmt := 'return' expr ';'
     block       := '{' stmt* '}'
 
-    expr       := comparison
+    expr       := logic_or
+    logic_or   := logic_and ('||' logic_and)*
+    logic_and  := comparison ('&&' comparison)*
     comparison := additive (('<'|'>'|'<='|'>='|'=='|'!=') additive)?
     additive   := term (('+' | '-') term)*
     term       := factor (('*' | '/') factor)*
-    factor     := '-' factor | postfix
+    factor     := ('-' | '!') factor | postfix
     postfix    := primary ('.' IDENT arglist? )*   # field access / method call
     primary    := INT | FLOAT | 'true' | 'false' | 'this' | 'new' IDENT arglist
                 | IDENT arglist? | '(' expr ')'
@@ -496,7 +498,21 @@ class Parser:
         return SuperCall(args)
 
     def expr(self) -> Expr:
-        return self.comparison()
+        return self.logic_or()
+
+    def logic_or(self) -> Expr:
+        node = self.logic_and()
+        while self.current.kind is TokenKind.OR:
+            self.advance()
+            node = BinaryOp("||", node, self.logic_and())
+        return node
+
+    def logic_and(self) -> Expr:
+        node = self.comparison()
+        while self.current.kind is TokenKind.AND:
+            self.advance()
+            node = BinaryOp("&&", node, self.comparison())
+        return node
 
     def comparison(self) -> Expr:
         node = self.additive()
@@ -523,6 +539,9 @@ class Parser:
         if self.current.kind is TokenKind.MINUS:
             self.advance()
             return UnaryOp("-", self.factor())
+        if self.current.kind is TokenKind.NOT:
+            self.advance()
+            return UnaryOp("!", self.factor())
         return self.postfix()
 
     def postfix(self) -> Expr:
