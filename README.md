@@ -63,6 +63,8 @@ tawlac help            # or: tawlac help run
   them, so `7.0 / 2` is `3.5` while `7 / 2` stays `3`.
 - **`for` loops:** the C-style `for (int i = 0; i < n; i = i + 1) { ... }`, with
   the loop variable scoped to the loop.
+- **Logical operators:** `&&`, `||`, and `!` on bools, with short-circuit
+  evaluation (so `u != null && u.alive()` is safe).
 - **`var`:** skip the type and let it be inferred — `var x = 5;`.
 - **`null` & defaults:** reference types (objects, strings, arrays) can be
   `null`, and a declaration can skip the initializer — `int x;` is `0`,

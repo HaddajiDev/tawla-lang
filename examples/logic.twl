@@ -1,0 +1,18 @@
+// Logical operators: && (and), || (or), ! (not), with short-circuit evaluation.
+
+int classify(int n) {
+    if (n >= 0 && n <= 9) { return 1; }   // single digit
+    if (n < 0 || n > 100) { return 2; }   // out of range
+    return 3;
+}
+
+class Main {
+    void main() {
+        print(classify(5));      // 1
+        print(classify(-4));     // 2
+        print(classify(50));     // 3
+
+        bool ready = true;
+        if (!ready) { print(0); } else { print(1); }   // 1
+    }
+}
