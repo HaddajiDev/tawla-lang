@@ -65,6 +65,8 @@ tawlac help            # or: tawlac help run
   the loop variable scoped to the loop.
 - **Logical operators:** `&&`, `||`, and `!` on bools, with short-circuit
   evaluation (so `u != null && u.alive()` is safe).
+- **Ternary:** `cond ? a : b` picks a value inline (lazy — only the taken
+  branch runs).
 - **`var`:** skip the type and let it be inferred — `var x = 5;`.
 - **`null` & defaults:** reference types (objects, strings, arrays) can be
   `null`, and a declaration can skip the initializer — `int x;` is `0`,

@@ -1,0 +1,15 @@
+// The ternary operator: cond ? a : b  (lazy, picks a common branch type).
+
+int max(int a, int b) {
+    return a > b ? a : b;
+}
+
+class Main {
+    void main() {
+        print(max(3, 9));                      // 9
+
+        int n = 2;
+        string size = n == 0 ? "zero" : n < 10 ? "small" : "big";
+        print(size);                           // small
+    }
+}
