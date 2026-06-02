@@ -840,6 +840,10 @@ class CodeGen:
         if name == "__io_write":
             value = self._gen_expr(args[0])
             return self.builder.call(self.printf, [self._str_ptr(self._fmt_str_raw), value])
+        if name == "panic":
+            msg = self._gen_expr(args[0])
+            self.builder.call(self.printf, [self._str_ptr(self._fmt_str), msg])
+            return self.builder.call(self.exit, [ir.Constant(i32, 1)])
         raise CodeGenError(f"unknown builtin {name!r}")
 
     def _flush_stdout(self) -> None:

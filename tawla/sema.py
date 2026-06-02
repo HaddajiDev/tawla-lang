@@ -104,6 +104,7 @@ _BUILTINS = {
     "__io_read_float": ([], FLOAT),
     "__io_read_line": ([], STRING),
     "__io_write": ([STRING], VOID),
+    "panic": ([STRING], VOID),
 }
 
 # Math builtins, keyed by name -> number of arguments. Their argument and return
