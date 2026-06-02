@@ -183,7 +183,27 @@ class Parser:
                 return True
             if self.peek(1).kind is TokenKind.LBRACKET and self.peek(2).kind is TokenKind.RBRACKET:
                 return True
+            if self.peek(1).kind is TokenKind.LT:
+                return self._generic_decl_ahead()
         return False
+
+    def _generic_decl_ahead(self) -> bool:
+        """With current=IDENT and peek(1)=`<`, scan a balanced `<...>`; it's a
+        declaration if an IDENT follows the matching `>`. Bails at
+        `;`/`{`/`}`/EOF so a comparison like `a < b;` stays a statement."""
+        depth = 0
+        i = 1
+        while True:
+            kind = self.peek(i).kind
+            if kind is TokenKind.LT:
+                depth += 1
+            elif kind is TokenKind.GT:
+                depth -= 1
+                if depth == 0:
+                    return self.peek(i + 1).kind is TokenKind.IDENT
+            elif kind in (TokenKind.EOF, TokenKind.SEMICOLON, TokenKind.LBRACE, TokenKind.RBRACE):
+                return False
+            i += 1
 
     def parse(self) -> list:
         items: list = []
