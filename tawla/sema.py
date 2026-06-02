@@ -107,6 +107,13 @@ _BUILTINS = {
     "__io_read_line": ([], STRING),
     "__io_write": ([STRING], VOID),
     "panic": ([STRING], VOID),
+    "__http_listen": ([INT], INT),
+    "__http_port": ([INT], INT),
+    "__http_accept": ([INT], INT),
+    "__http_method": ([INT], STRING),
+    "__http_path": ([INT], STRING),
+    "__http_body": ([INT], STRING),
+    "__http_respond": ([INT, INT, STRING], VOID),
 }
 
 # Math builtins, keyed by name -> number of arguments. Their argument and return

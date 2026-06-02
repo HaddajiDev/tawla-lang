@@ -37,3 +37,38 @@ def test_http_runtime_roundtrip():
     STATE.reset()
     assert result["status"] == 200
     assert result["body"] == "okok"
+
+
+def run_server_once(tmp_path, src, method="GET", path="/", body=None):
+    """Run a Tawla server program that binds port 0, prints the port, handles
+    one request, and exits. Returns (status, response_body)."""
+    prog = tmp_path / "srv.twl"
+    prog.write_text(src, encoding="utf-8")
+    p = subprocess.Popen(
+        [sys.executable, "-m", "tawla", "run", str(prog)],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=ROOT,
+    )
+    try:
+        port_line = p.stdout.readline().strip()
+        port = int(port_line)
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        conn.request(method, path, body=body)
+        resp = conn.getresponse()
+        out = (resp.status, resp.read().decode())
+        conn.close()
+        p.wait(timeout=5)
+        return out
+    finally:
+        if p.poll() is None:
+            p.kill()
+
+
+def test_raw_primitives_end_to_end(tmp_path):
+    src = (
+        "class Main { void main() {"
+        " int s = __http_listen(0); print(__http_port(s));"
+        " int r = __http_accept(s); __http_respond(r, 200, __http_path(r)); } }"
+    )
+    status, body = run_server_once(tmp_path, src, path="/hello")
+    assert status == 200
+    assert body == "/hello"

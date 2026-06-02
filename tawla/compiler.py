@@ -8,7 +8,7 @@ from pathlib import Path
 
 import llvmlite.binding as llvm
 
-from . import gc_runtime, io_runtime
+from . import gc_runtime, http_runtime, io_runtime
 from .codegen import build_module
 from .lexer import tokenize
 from .loader import load_program, resolve_imports
@@ -60,6 +60,7 @@ def _run_items(ast: list) -> int:
     _initialize()
     gc_runtime.install()
     io_runtime.install()
+    http_runtime.install()
     target_machine = llvm.Target.from_default_triple().create_target_machine()
     module.triple = llvm.get_process_triple()
     module.data_layout = str(target_machine.target_data)

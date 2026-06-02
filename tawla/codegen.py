@@ -124,6 +124,18 @@ class CodeGen:
         self.io_read_float = ir.Function(self.module, ir.FunctionType(f64, []), name="io_read_float")
         self.io_read_line = ir.Function(self.module, ir.FunctionType(i8ptr, []), name="io_read_line")
 
+        i32_to_i32 = ir.FunctionType(i32, [i32])
+        self.http_listen = ir.Function(self.module, i32_to_i32, name="__http_listen")
+        self.http_port = ir.Function(self.module, i32_to_i32, name="__http_port")
+        self.http_accept = ir.Function(self.module, i32_to_i32, name="__http_accept")
+        i32_to_str = ir.FunctionType(i8ptr, [i32])
+        self.http_method = ir.Function(self.module, i32_to_str, name="__http_method")
+        self.http_path = ir.Function(self.module, i32_to_str, name="__http_path")
+        self.http_body = ir.Function(self.module, i32_to_str, name="__http_body")
+        self.http_respond = ir.Function(
+            self.module, ir.FunctionType(void, [i32, i32, i8ptr]), name="__http_respond"
+        )
+
         self._fmt_int = self._global_string(b"%d\n\0", "fmt_int")
         self._fmt_str = self._global_string(b"%s\n\0", "fmt_str")
         self._fmt_float = self._global_string(b"%g\n\0", "fmt_float")
@@ -870,6 +882,24 @@ class CodeGen:
             msg = self._gen_expr(args[0])
             self.builder.call(self.printf, [self._str_ptr(self._fmt_str), msg])
             return self.builder.call(self.exit, [ir.Constant(i32, 1)])
+        if name == "__http_listen":
+            return self.builder.call(self.http_listen, [self._gen_expr(args[0])])
+        if name == "__http_port":
+            return self.builder.call(self.http_port, [self._gen_expr(args[0])])
+        if name == "__http_accept":
+            self._flush_stdout()
+            return self.builder.call(self.http_accept, [self._gen_expr(args[0])])
+        if name == "__http_method":
+            return self.builder.call(self.http_method, [self._gen_expr(args[0])])
+        if name == "__http_path":
+            return self.builder.call(self.http_path, [self._gen_expr(args[0])])
+        if name == "__http_body":
+            return self.builder.call(self.http_body, [self._gen_expr(args[0])])
+        if name == "__http_respond":
+            rid = self._gen_expr(args[0])
+            status = self._gen_expr(args[1])
+            body = self._gen_expr(args[2])
+            return self.builder.call(self.http_respond, [rid, status, body])
         raise CodeGenError(f"unknown builtin {name!r}")
 
     def _flush_stdout(self) -> None:
