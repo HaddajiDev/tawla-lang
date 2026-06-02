@@ -774,11 +774,15 @@ class CodeGen:
 
         if isinstance(node, UnaryOp):
             operand = self._gen_expr(node.operand)
+            if node.op == "!":
+                return self.builder.xor(operand, ir.Constant(i1, 1))
             if operand.type == f64:
                 return self.builder.fneg(operand)
             return self.builder.sub(ir.Constant(i32, 0), operand)
 
         if isinstance(node, BinaryOp):
+            if node.op in ("&&", "||"):
+                return self._gen_logical(node)
             left = self._gen_expr(node.left)
             right = self._gen_expr(node.right)
             if node.op in ("==", "!=") and (
@@ -917,6 +921,33 @@ class CodeGen:
             case "/":
                 return self.builder.fdiv(left, right)
         raise CodeGenError(f"unknown operator {op!r}")
+
+    def _gen_logical(self, node: BinaryOp) -> ir.Value:
+        """Short-circuit && / ||. The right operand is generated only inside the
+        rhs block, so it is not evaluated when the left side decides the result."""
+        slot = self._alloca("logic", i1)
+        left = self._gen_expr(node.left)
+        func = self.builder.function
+        rhs_bb = func.append_basic_block("logic.rhs")
+        short_bb = func.append_basic_block("logic.short")
+        end_bb = func.append_basic_block("logic.end")
+
+        if node.op == "&&":
+            self.builder.cbranch(left, rhs_bb, short_bb)
+            self.builder.position_at_end(short_bb)
+            self.builder.store(ir.Constant(i1, 0), slot)
+        else:   # "||"
+            self.builder.cbranch(left, short_bb, rhs_bb)
+            self.builder.position_at_end(short_bb)
+            self.builder.store(ir.Constant(i1, 1), slot)
+        self.builder.branch(end_bb)
+
+        self.builder.position_at_end(rhs_bb)
+        self.builder.store(self._gen_expr(node.right), slot)
+        self.builder.branch(end_bb)
+
+        self.builder.position_at_end(end_bb)
+        return self.builder.load(slot)
 
     def _gen_null_compare(self, op: str, left: ir.Value, right: ir.Value) -> ir.Value:
         """Compare a reference value against null. One or both sides are the null
