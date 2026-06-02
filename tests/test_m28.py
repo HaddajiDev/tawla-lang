@@ -51,3 +51,24 @@ def test_precedence_and_binds_tighter_than_or():
     e = _expr("a || b && c")
     assert e.op == "||"
     assert isinstance(e.right, BinaryOp) and e.right.op == "&&"
+
+
+from tawla.sema import SemaError, check
+
+
+def _sema(src):
+    return check(parse(tokenize(src)))
+
+
+def test_and_or_not_typecheck_ok():
+    _sema("class Main { void main() { bool b = true && false || !true; } }")
+
+
+def test_and_requires_bool():
+    with pytest.raises(SemaError):
+        _sema("class Main { void main() { bool b = 1 && 2; } }")
+
+
+def test_not_requires_bool():
+    with pytest.raises(SemaError):
+        _sema("class Main { void main() { bool b = !5; } }")

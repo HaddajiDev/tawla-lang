@@ -94,6 +94,7 @@ class SemaError(Exception):
 _ARITHMETIC = {"+", "-", "*", "/"}
 _ORDERING = {"<", "<=", ">", ">="}
 _EQUALITY = {"==", "!="}
+_LOGICAL = {"&&", "||"}
 
 # Builtins with a fixed, non-numeric signature: (param types, return type).
 # The __io_* ones are the native primitives behind stdlib/IO.twl.
@@ -619,6 +620,10 @@ class Sema:
 
         if isinstance(node, UnaryOp):
             operand = self._check_expr(node.operand)
+            if node.op == "!":
+                if operand != BOOL:
+                    raise SemaError(f"unary '!' requires bool, got {operand}")
+                return BOOL
             if operand not in _NUMERIC:
                 raise SemaError(f"unary '-' requires int or float, got {operand}")
             return operand
@@ -626,6 +631,13 @@ class Sema:
         if isinstance(node, BinaryOp):
             left = self._check_expr(node.left)
             right = self._check_expr(node.right)
+            if node.op in _LOGICAL:
+                if left != BOOL or right != BOOL:
+                    raise SemaError(
+                        f"operator {node.op!r} requires bool operands, "
+                        f"got {left} and {right}"
+                    )
+                return BOOL
             if node.op in _ARITHMETIC:
                 if node.op == "+" and left == STRING and right == STRING:
                     return STRING
