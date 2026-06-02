@@ -109,9 +109,15 @@ def tokenize(src: str) -> list[Token]:
         elif c == ">":
             kind, text = (TokenKind.GE, ">=") if nxt == "=" else (TokenKind.GT, ">")
         elif c == "!":
-            if nxt != "=":
-                raise LexError(f"unexpected character '!' at position {i}")
-            kind, text = TokenKind.NE, "!="
+            kind, text = (TokenKind.NE, "!=") if nxt == "=" else (TokenKind.NOT, "!")
+        elif c == "&":
+            if nxt != "&":
+                raise LexError(f"unexpected character '&' at position {i}")
+            kind, text = TokenKind.AND, "&&"
+        elif c == "|":
+            if nxt != "|":
+                raise LexError(f"unexpected character '|' at position {i}")
+            kind, text = TokenKind.OR, "||"
         else:
             kind = text = None
 
