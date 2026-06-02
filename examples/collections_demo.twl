@@ -1,0 +1,21 @@
+// List and Map from the standard library.
+// (File named *_demo so its name doesn't clash with the imported module on
+// case-insensitive filesystems.)
+import "Collections.twl";
+
+class Main {
+    void main() {
+        List<int> squares = new List<int>();
+        for (int i = 1; i <= 5; i = i + 1) {
+            squares.add(i * i);
+        }
+        print(squares.size());        // 5
+        print(squares.get(4));        // 25
+
+        Map<string, int> ages = new Map<string, int>();
+        ages.put("ada", 36);
+        ages.put("bob", 7);
+        print(ages.get("ada"));       // 36
+        if (ages.has("carol")) { print(1); } else { print(0); }  // 0
+    }
+}

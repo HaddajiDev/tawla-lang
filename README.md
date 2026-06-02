@@ -93,6 +93,11 @@ tawlac help            # or: tawlac help run
 - **IO library:** `import "IO.twl";` (a small module that ships with the
   compiler) gives you `readLine()`, `readInt()`, `readFloat()`, and `write(s)`
   (print with no trailing newline) for reading input and prompting.
+- **Collections:** `import "Collections.twl";` gives you a growable `List<T>`
+  (`add`, `get`, `set`, `size`) and a `Map<K,V>` (`put`, `get`, `has`, `size`).
+  `Map.get` returns `null` for a missing object value. (No nested generics yet,
+  e.g. `Map<string, List<int>>`.)
+- **`panic(s)`:** print a message and abort, for unrecoverable errors.
 - **Built-in functions:** a handful of predefined functions you can call without
   declaring anything — `sqrt`, `pow`, `abs`, `min`, `max`, `floor`, `ceil` for
   math, plus `collect()`/`__live()` for the GC.
