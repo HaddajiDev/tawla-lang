@@ -35,6 +35,7 @@ from .ast_nodes import (
     Stmt,
     StringLiteral,
     SuperCall,
+    Ternary,
     ThisExpr,
     UnaryOp,
     VarDecl,
@@ -779,6 +780,27 @@ class CodeGen:
             if operand.type == f64:
                 return self.builder.fneg(operand)
             return self.builder.sub(ir.Constant(i32, 0), operand)
+
+        if isinstance(node, Ternary):
+            slot_ty = self._llvm_type(node.result_type)
+            slot = self._alloca("ternary", slot_ty)
+            cond = self._as_bool(self._gen_expr(node.cond))
+            func = self.builder.function
+            then_bb = func.append_basic_block("ternary.then")
+            else_bb = func.append_basic_block("ternary.else")
+            end_bb = func.append_basic_block("ternary.end")
+            self.builder.cbranch(cond, then_bb, else_bb)
+
+            self.builder.position_at_end(then_bb)
+            self.builder.store(self._coerce(self._gen_expr(node.then_expr), slot_ty), slot)
+            self.builder.branch(end_bb)
+
+            self.builder.position_at_end(else_bb)
+            self.builder.store(self._coerce(self._gen_expr(node.else_expr), slot_ty), slot)
+            self.builder.branch(end_bb)
+
+            self.builder.position_at_end(end_bb)
+            return self.builder.load(slot)
 
         if isinstance(node, BinaryOp):
             if node.op in ("&&", "||"):

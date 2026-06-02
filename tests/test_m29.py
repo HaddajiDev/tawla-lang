@@ -70,3 +70,44 @@ def test_ternary_condition_must_be_bool():
 def test_ternary_incompatible_branches_error():
     with pytest.raises(SemaError):
         _sema('class Main { void main() { var x = true ? 1 : "s"; } }')
+
+
+def test_ternary_selects_then(run_twl):
+    assert run_twl("class Main { void main() { print(true ? 1 : 2); } }").stdout == "1\n"
+
+
+def test_ternary_selects_else(run_twl):
+    assert run_twl("class Main { void main() { print(false ? 1 : 2); } }").stdout == "2\n"
+
+
+def test_ternary_int_float_runs_as_float(run_twl):
+    src = "class Main { void main() { print((true ? 7 : 0) / 2.0); } }"
+    assert run_twl(src).stdout == "3.5\n"
+
+
+def test_ternary_nesting(run_twl):
+    src = (
+        "int label(int n) { return n == 0 ? 10 : n == 1 ? 20 : 30; }"
+        " class Main { void main() { print(label(0)); print(label(1)); print(label(2)); } }"
+    )
+    assert run_twl(src).stdout == "10\n20\n30\n"
+
+
+def test_ternary_is_lazy(run_twl):
+    src = (
+        "class A { public int v() { return 1; } }"
+        " class Main { void main() {"
+        " A a = null; int id = a != null ? a.v() : 0; print(id); } }"
+    )
+    r = run_twl(src)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.stdout == "0\n"
+
+
+def test_ternary_with_objects(run_twl):
+    src = (
+        "class A { public int who() { return 1; } }"
+        " class Main { void main() {"
+        " A x = new A(); A y = new A(); A z = true ? x : y; print(z.who()); } }"
+    )
+    assert run_twl(src).stdout == "1\n"
