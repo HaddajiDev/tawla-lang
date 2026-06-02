@@ -214,8 +214,9 @@ class CodeGen:
             if not isinstance(it, (ClassDecl, FuncDecl, InterfaceDecl))
         ]
 
-        self._declare_interfaces(interfaces)
+        self._declare_interface_types(interfaces)
         self._declare_class_types(classes)
+        self._declare_interface_sigs(interfaces)
         self._declare_class_members(classes)
         for func in funcs:
             self._declare_function(func)
@@ -229,15 +230,21 @@ class CodeGen:
         return self.module
 
 
-    def _declare_interfaces(self, interfaces: list[InterfaceDecl]) -> None:
+    def _declare_interface_types(self, interfaces: list[InterfaceDecl]) -> None:
+        """Phase 1: create the fat-pointer struct type + method index for each
+        interface. Done before class types so interface-typed fields resolve."""
         ctx = self.module.context
         for i in interfaces:
             self.iface_decls[i.name] = i
             st = ctx.get_identified_type(i.name)
             st.set_body(i8ptr, vtable_ptr_ty)
             self.iface_struct[i.name] = st
-        for i in interfaces:
             self.iface_index[i.name] = {m.name: k for k, m in enumerate(i.methods)}
+
+    def _declare_interface_sigs(self, interfaces: list[InterfaceDecl]) -> None:
+        """Phase 2: compute each interface method's LLVM signature. Done after
+        class types so an interface method that takes/returns a class resolves."""
+        for i in interfaces:
             self.iface_sig[i.name] = {
                 m.name: (
                     self._ret_llvm(m.ret_type),

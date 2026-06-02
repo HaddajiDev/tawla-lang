@@ -1,0 +1,64 @@
+// Tawla's HTTP server library. Import with:  import "Http.twl";
+//
+// Single-threaded HTTP/1.1. Drive it from your own loop with Server.accept(),
+// or register handlers on a Router and call Server.serve(router).
+
+import "Collections.twl";
+
+class Request {
+    private int id;
+    public Request(int id) { this.id = id; }
+    public string method() { return __http_method(this.id); }
+    public string path() { return __http_path(this.id); }
+    public string body() { return __http_body(this.id); }
+    public void respond(int status, string body) { __http_respond(this.id, status, body); }
+}
+
+interface Handler {
+    void handle(Request req);
+}
+
+class Route {
+    public string method;
+    public string path;
+    public Handler handler;
+    public Route(string m, string p, Handler h) {
+        this.method = m;
+        this.path = p;
+        this.handler = h;
+    }
+}
+
+class Router {
+    private List<Route> routes;
+
+    public Router() { this.routes = new List<Route>(); }
+
+    public void get(string path, Handler h) { this.routes.add(new Route("GET", path, h)); }
+    public void post(string path, Handler h) { this.routes.add(new Route("POST", path, h)); }
+
+    public void handle(Request req) {
+        int i = 0;
+        while (i < this.routes.size()) {
+            Route r = this.routes.get(i);
+            if (r.method == req.method() && r.path == req.path()) {
+                r.handler.handle(req);
+                return;
+            }
+            i = i + 1;
+        }
+        req.respond(404, "not found");
+    }
+}
+
+class Server {
+    private int id;
+    public Server(int port) { this.id = __http_listen(port); }
+    public int port() { return __http_port(this.id); }
+    public Request accept() { return new Request(__http_accept(this.id)); }
+    public void serve(Router router) {
+        while (true) {
+            router.handle(this.accept());
+        }
+    }
+}

@@ -72,3 +72,50 @@ def test_raw_primitives_end_to_end(tmp_path):
     status, body = run_server_once(tmp_path, src, path="/hello")
     assert status == 200
     assert body == "/hello"
+
+
+RAW = (
+    'import "Http.twl";'
+    " class Main { void main() {"
+    " Server s = new Server(0); print(s.port());"
+    " Request r = s.accept(); r.respond(200, r.path()); } }"
+)
+
+ROUTER = (
+    'import "Http.twl";'
+    ' class Hi : Handler { public void handle(Request req) { req.respond(200, "hello"); } }'
+    " class Main { void main() {"
+    ' Router router = new Router(); router.get("/hi", new Hi());'
+    " Server s = new Server(0); print(s.port());"
+    " router.handle(s.accept()); } }"
+)
+
+
+def test_server_request_api(tmp_path):
+    status, body = run_server_once(tmp_path, RAW, path="/abc")
+    assert status == 200
+    assert body == "/abc"
+
+
+def test_request_body_echo(tmp_path):
+    src = (
+        'import "Http.twl";'
+        " class Main { void main() {"
+        " Server s = new Server(0); print(s.port());"
+        " Request r = s.accept(); r.respond(200, r.body()); } }"
+    )
+    status, body = run_server_once(tmp_path, src, method="POST", path="/x", body="payload")
+    assert status == 200
+    assert body == "payload"
+
+
+def test_router_matches_route(tmp_path):
+    status, body = run_server_once(tmp_path, ROUTER, path="/hi")
+    assert status == 200
+    assert body == "hello"
+
+
+def test_router_404_for_unknown(tmp_path):
+    status, body = run_server_once(tmp_path, ROUTER, path="/nope")
+    assert status == 404
+    assert body == "not found"
