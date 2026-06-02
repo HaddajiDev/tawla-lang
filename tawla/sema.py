@@ -33,6 +33,7 @@ from .ast_nodes import (
     Stmt,
     StringLiteral,
     SuperCall,
+    Ternary,
     ThisExpr,
     UnaryOp,
     VarDecl,
@@ -627,6 +628,26 @@ class Sema:
             if operand not in _NUMERIC:
                 raise SemaError(f"unary '-' requires int or float, got {operand}")
             return operand
+
+        if isinstance(node, Ternary):
+            if self._check_expr(node.cond) != BOOL:
+                raise SemaError("ternary condition must be bool")
+            t1 = self._check_expr(node.then_expr)
+            t2 = self._check_expr(node.else_expr)
+            if t1 == VOID or t2 == VOID:
+                raise SemaError("ternary branches cannot be void")
+            if self._is_subtype(t2, t1):
+                common = t1
+            elif self._is_subtype(t1, t2):
+                common = t2
+            else:
+                raise SemaError(
+                    f"ternary branches have incompatible types {t1} and {t2}"
+                )
+            if common == NULL:
+                raise SemaError("ternary needs at least one typed branch")
+            node.result_type = common.name
+            return common
 
         if isinstance(node, BinaryOp):
             left = self._check_expr(node.left)

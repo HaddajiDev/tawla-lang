@@ -43,3 +43,30 @@ def test_monomorphize_traverses_ternary():
         " var b = new Box<int>(); } }"
     )
     monomorphize(parse(tokenize(src)))  # must not raise
+
+
+from tawla.sema import SemaError, check
+
+
+def _sema(src):
+    return check(parse(tokenize(src)))
+
+
+def test_ternary_typechecks_ok():
+    _sema("class Main { void main() { int x = true ? 1 : 2; } }")
+
+
+def test_ternary_int_float_common_type_is_float():
+    _sema("class Main { void main() { float x = true ? 1 : 2.0; } }")
+    with pytest.raises(SemaError):
+        _sema("class Main { void main() { int x = true ? 1 : 2.0; } }")
+
+
+def test_ternary_condition_must_be_bool():
+    with pytest.raises(SemaError):
+        _sema("class Main { void main() { int x = 5 ? 1 : 2; } }")
+
+
+def test_ternary_incompatible_branches_error():
+    with pytest.raises(SemaError):
+        _sema('class Main { void main() { var x = true ? 1 : "s"; } }')
