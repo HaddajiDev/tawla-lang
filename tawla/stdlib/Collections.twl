@@ -1,0 +1,93 @@
+// Tawla's collections. Import with:  import "Collections.twl";
+//
+// List<T> is a growable array; Map<K,V> is parallel key/value arrays with a
+// linear scan. Internals are private; the API is public.
+
+class List<T> {
+    private T[] items;
+    private int count;
+
+    public List() {
+        this.items = new T[4];
+        this.count = 0;
+    }
+
+    public int size() { return this.count; }
+
+    public void add(T x) {
+        if (this.count == this.items.length) { this.grow(); }
+        this.items[this.count] = x;
+        this.count = this.count + 1;
+    }
+
+    public T get(int i) {
+        if (i < 0) { panic("List.get: index out of range"); }
+        if (i >= this.count) { panic("List.get: index out of range"); }
+        return this.items[i];
+    }
+
+    public void set(int i, T x) {
+        if (i < 0) { panic("List.set: index out of range"); }
+        if (i >= this.count) { panic("List.set: index out of range"); }
+        this.items[i] = x;
+    }
+
+    private void grow() {
+        T[] bigger = new T[this.items.length * 2];
+        int i = 0;
+        while (i < this.count) { bigger[i] = this.items[i]; i = i + 1; }
+        this.items = bigger;
+    }
+}
+
+class Map<K, V> {
+    private K[] keys;
+    private V[] vals;
+    private int count;
+
+    public Map() {
+        this.keys = new K[4];
+        this.vals = new V[4];
+        this.count = 0;
+    }
+
+    public int size() { return this.count; }
+
+    private int indexOf(K key) {
+        int i = 0;
+        while (i < this.count) {
+            if (this.keys[i] == key) { return i; }
+            i = i + 1;
+        }
+        return -1;
+    }
+
+    public bool has(K key) { return this.indexOf(key) >= 0; }
+
+    public V get(K key) {
+        int i = this.indexOf(key);
+        if (i >= 0) { return this.vals[i]; }
+        V notfound;
+        return notfound;
+    }
+
+    public void put(K key, V value) {
+        int i = this.indexOf(key);
+        if (i >= 0) { this.vals[i] = value; return; }
+        if (this.count == this.keys.length) { this.grow(); }
+        this.keys[this.count] = key;
+        this.vals[this.count] = value;
+        this.count = this.count + 1;
+    }
+
+    private void grow() {
+        K[] bk = new K[this.keys.length * 2];
+        V[] bv = new V[this.vals.length * 2];
+        int i = 0;
+        while (i < this.count) {
+            bk[i] = this.keys[i]; bv[i] = this.vals[i]; i = i + 1;
+        }
+        this.keys = bk;
+        this.vals = bv;
+    }
+}
