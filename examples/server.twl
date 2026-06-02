@@ -1,0 +1,22 @@
+// A tiny HTTP server with Express-style routing.
+// Run it, then in another terminal:  curl localhost:8080/health
+import "Http.twl";
+
+class Health : Handler {
+    public void handle(Request req) { req.respond(200, "ok"); }
+}
+
+class Echo : Handler {
+    public void handle(Request req) { req.respond(200, req.body()); }
+}
+
+class Main {
+    void main() {
+        Router router = new Router();
+        router.get("/health", new Health());
+        router.post("/echo", new Echo());
+
+        print("listening on http://localhost:8080");
+        new Server(8080).serve(router);
+    }
+}

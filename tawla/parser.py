@@ -384,7 +384,7 @@ class Parser:
                 return self.return_stmt()
             case TokenKind.KW_SUPER:
                 return self.super_stmt()
-            case TokenKind.IDENT | TokenKind.KW_THIS:
+            case TokenKind.IDENT | TokenKind.KW_THIS | TokenKind.KW_NEW:
                 return self.assign_or_expr_stmt()
         raise ParseError(
             f"expected a statement, got {self.current.kind.name} "

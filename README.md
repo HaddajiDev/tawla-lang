@@ -102,6 +102,10 @@ tawlac help            # or: tawlac help run
   `Map.get` returns `null` for a missing object value. (No nested generics yet,
   e.g. `Map<string, List<int>>`.)
 - **`panic(s)`:** print a message and abort, for unrecoverable errors.
+- **HTTP server:** `import "Http.twl";` gives you a `Server`, a `Request`
+  (`method`/`path`/`body`/`respond`), and an Express-style `Router` with
+  `Handler` classes — `router.get("/health", new Health())` then
+  `new Server(8080).serve(router)`. Single-threaded, minimal HTTP/1.1.
 - **Built-in functions:** a handful of predefined functions you can call without
   declaring anything — `sqrt`, `pow`, `abs`, `min`, `max`, `floor`, `ceil` for
   math, plus `collect()`/`__live()` for the GC.

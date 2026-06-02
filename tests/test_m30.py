@@ -119,3 +119,13 @@ def test_router_404_for_unknown(tmp_path):
     status, body = run_server_once(tmp_path, ROUTER, path="/nope")
     assert status == 404
     assert body == "not found"
+
+
+def test_new_expression_statement_parses():
+    # `new Foo().method();` is a valid statement (regression for the server example).
+    from tawla.ast_nodes import ExprStmt, MethodCall
+    from tawla.parser import parse
+    from tawla.lexer import tokenize
+    stmt = parse(tokenize("new Foo().bar();"))[0]
+    assert isinstance(stmt, ExprStmt)
+    assert isinstance(stmt.expr, MethodCall)
