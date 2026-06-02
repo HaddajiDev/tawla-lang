@@ -57,6 +57,7 @@ class TokenKind(Enum):
     COMMA = auto()
     DOT = auto()
     COLON = auto()
+    QUESTION = auto()
     LBRACKET = auto()
     RBRACKET = auto()
     EOF = auto()

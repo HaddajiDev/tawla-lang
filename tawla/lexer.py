@@ -20,6 +20,7 @@ _SINGLE = {
     ",": TokenKind.COMMA,
     ".": TokenKind.DOT,
     ":": TokenKind.COLON,
+    "?": TokenKind.QUESTION,
     "[": TokenKind.LBRACKET,
     "]": TokenKind.RBRACKET,
 }

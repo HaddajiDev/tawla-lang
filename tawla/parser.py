@@ -31,7 +31,8 @@ us operator precedence for free: the deeper a rule sits, the tighter it binds, s
     return_stmt := 'return' expr ';'
     block       := '{' stmt* '}'
 
-    expr       := logic_or
+    expr       := ternary
+    ternary    := logic_or ('?' expr ':' ternary)?
     logic_or   := logic_and ('||' logic_and)*
     logic_and  := comparison ('&&' comparison)*
     comparison := additive (('<'|'>'|'<='|'>='|'=='|'!=') additive)?
@@ -71,6 +72,7 @@ from .ast_nodes import (
     NewArray,
     NullLiteral,
     Param,
+    Ternary,
     PrintStmt,
     Return,
     Stmt,
@@ -498,7 +500,17 @@ class Parser:
         return SuperCall(args)
 
     def expr(self) -> Expr:
-        return self.logic_or()
+        return self.ternary()
+
+    def ternary(self) -> Expr:
+        cond = self.logic_or()
+        if self.current.kind is TokenKind.QUESTION:
+            self.advance()
+            then_expr = self.expr()
+            self.expect(TokenKind.COLON)
+            else_expr = self.ternary()
+            return Ternary(cond, then_expr, else_expr)
+        return cond
 
     def logic_or(self) -> Expr:
         node = self.logic_and()

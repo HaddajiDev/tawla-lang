@@ -96,6 +96,14 @@ class BinaryOp(Expr):
     right: Expr
 
 
+@dataclass
+class Ternary(Expr):
+    cond: Expr
+    then_expr: Expr
+    else_expr: Expr
+    result_type: str | None = None
+
+
 
 
 @dataclass

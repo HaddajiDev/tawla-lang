@@ -34,6 +34,7 @@ from .ast_nodes import (
     PrintStmt,
     Return,
     SuperCall,
+    Ternary,
     UnaryOp,
     VarDecl,
     While,
@@ -203,6 +204,13 @@ class _Mono:
             return replace(e, operand=self.xf_expr(e.operand, subst))
         if isinstance(e, BinaryOp):
             return replace(e, left=self.xf_expr(e.left, subst), right=self.xf_expr(e.right, subst))
+        if isinstance(e, Ternary):
+            return replace(
+                e,
+                cond=self.xf_expr(e.cond, subst),
+                then_expr=self.xf_expr(e.then_expr, subst),
+                else_expr=self.xf_expr(e.else_expr, subst),
+            )
         return e
 
 
