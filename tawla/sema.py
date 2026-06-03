@@ -116,6 +116,8 @@ _BUILTINS = {
     "__http_respond": ([INT, INT, STRING], VOID),
     "charAt": ([STRING, INT], INT),
     "substring": ([STRING, INT, INT], STRING),
+    "toInt": ([STRING], INT),
+    "toFloat": ([STRING], FLOAT),
 }
 
 # Math builtins, keyed by name -> number of arguments. Their argument and return
@@ -710,6 +712,9 @@ class Sema:
         if name in _MATH_WIDEST:
             types = self._check_numeric(name, args, _MATH_WIDEST[name])
             return FLOAT if FLOAT in types else INT
+        if name == "toString":
+            self._check_numeric(name, args, 1)
+            return STRING
         return None
 
     def _check_numeric(self, name: str, args: list[Expr], n: int) -> list[Type]:

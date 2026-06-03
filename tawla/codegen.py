@@ -118,9 +118,8 @@ class CodeGen:
         self.strtod = ir.Function(
             self.module, ir.FunctionType(f64, [i8ptr, i8ptr.as_pointer()]), name="strtod"
         )
-        self.snprintf = ir.Function(
-            self.module, ir.FunctionType(i32, [i8ptr, i64, i8ptr], var_arg=True), name="snprintf"
-        )
+        self.num_to_str_i = ir.Function(self.module, ir.FunctionType(i8ptr, [i32]), name="num_to_str_i")
+        self.num_to_str_f = ir.Function(self.module, ir.FunctionType(i8ptr, [f64]), name="num_to_str_f")
 
         void = ir.VoidType()
         self.gc_alloc = ir.Function(self.module, ir.FunctionType(i8ptr, [i64]), name="gc_alloc")
@@ -150,8 +149,6 @@ class CodeGen:
         self._fmt_str = self._global_string(b"%s\n\0", "fmt_str")
         self._fmt_float = self._global_string(b"%g\n\0", "fmt_float")
         self._fmt_str_raw = self._global_string(b"%s\0", "fmt_str_raw")
-        self._fmt_d = self._global_string(b"%d\0", "fmt_d")
-        self._fmt_g = self._global_string(b"%g\0", "fmt_g")
         self._str_oob_msg = self._global_string(b"string index out of range\n\0", "str_oob_msg")
 
         self.null_ty = self.module.context.get_identified_type("$null")  # stays opaque
@@ -961,6 +958,17 @@ class CodeGen:
             self.builder.call(self.memcpy, [buf, src, n64])
             self.builder.store(ir.Constant(i8, 0), self.builder.gep(buf, [n], inbounds=True))
             return buf
+        if name == "toInt":
+            return self.builder.call(self.atoi, [self._gen_expr(args[0])])
+        if name == "toFloat":
+            return self.builder.call(
+                self.strtod, [self._gen_expr(args[0]), ir.Constant(i8ptr.as_pointer(), None)]
+            )
+        if name == "toString":
+            v = self._gen_expr(args[0])
+            if v.type == f64:
+                return self.builder.call(self.num_to_str_f, [v])
+            return self.builder.call(self.num_to_str_i, [v])
         raise CodeGenError(f"unknown builtin {name!r}")
 
     def _flush_stdout(self) -> None:
