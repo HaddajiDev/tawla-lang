@@ -142,7 +142,7 @@ class CodeGen:
         self.http_path = ir.Function(self.module, i32_to_str, name="__http_path")
         self.http_body = ir.Function(self.module, i32_to_str, name="__http_body")
         self.http_respond = ir.Function(
-            self.module, ir.FunctionType(void, [i32, i32, i8ptr]), name="__http_respond"
+            self.module, ir.FunctionType(void, [i32, i32, i8ptr, i8ptr]), name="__http_respond"
         )
 
         self._fmt_int = self._global_string(b"%d\n\0", "fmt_int")
@@ -927,8 +927,9 @@ class CodeGen:
         if name == "__http_respond":
             rid = self._gen_expr(args[0])
             status = self._gen_expr(args[1])
-            body = self._gen_expr(args[2])
-            return self.builder.call(self.http_respond, [rid, status, body])
+            ctype = self._gen_expr(args[2])
+            body = self._gen_expr(args[3])
+            return self.builder.call(self.http_respond, [rid, status, ctype, body])
         if name == "charAt":
             s = self._gen_expr(args[0])
             i = self._gen_expr(args[1])

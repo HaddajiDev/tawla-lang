@@ -113,7 +113,7 @@ _BUILTINS = {
     "__http_method": ([INT], STRING),
     "__http_path": ([INT], STRING),
     "__http_body": ([INT], STRING),
-    "__http_respond": ([INT, INT, STRING], VOID),
+    "__http_respond": ([INT, INT, STRING, STRING], VOID),
     "charAt": ([STRING, INT], INT),
     "substring": ([STRING, INT, INT], STRING),
     "toInt": ([STRING], INT),

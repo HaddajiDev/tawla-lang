@@ -32,7 +32,7 @@ def test_http_runtime_roundtrip():
     assert STATE.method(rid) == "POST"
     assert STATE.path(rid) == "/hi"
     assert STATE.body(rid) == "data"
-    STATE.respond(rid, 200, "okok")
+    STATE.respond(rid, 200, "text/plain", "okok")
     t.join(timeout=5)
     STATE.reset()
     assert result["status"] == 200
@@ -67,7 +67,7 @@ def test_raw_primitives_end_to_end(tmp_path):
     src = (
         "class Main { void main() {"
         " int s = __http_listen(0); print(__http_port(s));"
-        " int r = __http_accept(s); __http_respond(r, 200, __http_path(r)); } }"
+        ' int r = __http_accept(s); __http_respond(r, 200, "text/plain", __http_path(r)); } }'
     )
     status, body = run_server_once(tmp_path, src, path="/hello")
     assert status == 200

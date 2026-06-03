@@ -11,7 +11,12 @@ class Request {
     public string method() { return __http_method(this.id); }
     public string path() { return __http_path(this.id); }
     public string body() { return __http_body(this.id); }
-    public void respond(int status, string body) { __http_respond(this.id, status, body); }
+    public void respond(int status, string body) {
+        __http_respond(this.id, status, "text/plain", body);
+    }
+    public void respondJson(int status, string body) {
+        __http_respond(this.id, status, "application/json", body);
+    }
 }
 
 interface Handler {

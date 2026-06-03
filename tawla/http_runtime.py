@@ -103,7 +103,7 @@ class HttpState:
     def body(self, rid: int) -> str:
         return self.requests[rid]["body"]
 
-    def respond(self, rid: int, status: int, body: str) -> None:
+    def respond(self, rid: int, status: int, content_type: str, body: str) -> None:
         req = self.requests.pop(rid, None)
         if req is None:
             return
@@ -111,7 +111,7 @@ class HttpState:
         reason = _REASONS.get(status, "OK")
         head = (
             f"HTTP/1.1 {status} {reason}\r\n"
-            f"Content-Type: text/plain\r\n"
+            f"Content-Type: {content_type}\r\n"
             f"Content-Length: {len(body_bytes)}\r\n"
             f"Connection: close\r\n\r\n"
         ).encode("latin-1")
@@ -137,8 +137,10 @@ _c_accept = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_int32)(lambda s: STATE.acc
 _c_method = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_int32)(lambda r: _alloc_str(STATE.method(r)))
 _c_path = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_int32)(lambda r: _alloc_str(STATE.path(r)))
 _c_body = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_int32)(lambda r: _alloc_str(STATE.body(r)))
-_c_respond = ctypes.CFUNCTYPE(None, ctypes.c_int32, ctypes.c_int32, ctypes.c_char_p)(
-    lambda r, st, b: STATE.respond(r, st, b.decode("utf-8") if b else "")
+_c_respond = ctypes.CFUNCTYPE(None, ctypes.c_int32, ctypes.c_int32, ctypes.c_char_p, ctypes.c_char_p)(
+    lambda r, st, ct, b: STATE.respond(
+        r, st, ct.decode("utf-8") if ct else "text/plain", b.decode("utf-8") if b else ""
+    )
 )
 
 _CALLBACKS = [_c_listen, _c_port, _c_accept, _c_method, _c_path, _c_body, _c_respond]

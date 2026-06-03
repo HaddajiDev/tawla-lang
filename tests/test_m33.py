@@ -67,3 +67,50 @@ def test_escaping_round_trip(run_twl):
         ' print(back.get("k").asString().length);'
     )
     assert run_twl(src).stdout == "5\n"
+
+
+def _run_server_once(tmp_path, src, method="GET", path="/", body=None):
+    prog = tmp_path / "srv.twl"
+    prog.write_text(src, encoding="utf-8")
+    p = subprocess.Popen(
+        [sys.executable, "-m", "tawla", "run", str(prog)],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=ROOT,
+    )
+    try:
+        port = int(p.stdout.readline().strip())
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        conn.request(method, path, body=body)
+        resp = conn.getresponse()
+        out = (resp.status, resp.getheader("Content-Type"), resp.read().decode())
+        conn.close()
+        p.wait(timeout=5)
+        return out
+    finally:
+        if p.poll() is None:
+            p.kill()
+
+
+def test_respond_json_sets_content_type(tmp_path):
+    src = (
+        'import "Http.twl";'
+        " class Main { void main() {"
+        " Server s = new Server(0); print(s.port());"
+        ' Request r = s.accept(); r.respondJson(200, "{\\"ok\\":true}"); } }'
+    )
+    status, ctype, body = _run_server_once(tmp_path, src)
+    assert status == 200
+    assert ctype == "application/json"
+    assert body == '{"ok":true}'
+
+
+def test_respond_stays_text_plain(tmp_path):
+    src = (
+        'import "Http.twl";'
+        " class Main { void main() {"
+        " Server s = new Server(0); print(s.port());"
+        ' Request r = s.accept(); r.respond(200, "hi"); } }'
+    )
+    status, ctype, body = _run_server_once(tmp_path, src)
+    assert status == 200
+    assert ctype == "text/plain"
+    assert body == "hi"
