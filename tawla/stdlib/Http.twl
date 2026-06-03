@@ -19,6 +19,13 @@ class Request {
     }
 }
 
+class Response {
+    private int id;
+    public Response(int id) { this.id = id; }
+    public int status() { return __fetch_status(this.id); }
+    public string body() { return __fetch_body(this.id); }
+}
+
 interface Handler {
     void handle(Request req);
 }
@@ -66,4 +73,12 @@ class Server {
             router.handle(this.accept());
         }
     }
+}
+
+Response fetch(string url) {
+    return new Response(__fetch("GET", url, ""));
+}
+
+Response httpRequest(string method, string url, string body) {
+    return new Response(__fetch(method, url, body));
 }
