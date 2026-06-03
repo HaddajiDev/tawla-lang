@@ -64,6 +64,16 @@ class Map<K, V> {
 
     public bool has(K key) { return this.indexOf(key) >= 0; }
 
+    public List<K> keys() {
+        List<K> result = new List<K>();
+        int i = 0;
+        while (i < this.count) {
+            result.add(this.keys[i]);
+            i = i + 1;
+        }
+        return result;
+    }
+
     public V get(K key) {
         int i = this.indexOf(key);
         if (i >= 0) { return this.vals[i]; }
