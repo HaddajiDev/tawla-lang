@@ -103,10 +103,12 @@ tawlac help            # or: tawlac help run
   (`add`, `get`, `set`, `size`) and a `Map<K,V>` (`put`, `get`, `has`, `size`).
   `Map.get` returns `null` for a missing object value. (No nested generics yet,
   e.g. `Map<string, List<int>>`.)
-- **JSON (read):** `import "Json.twl";` then `parseJson(text)` returns a `Json`
-  value you navigate with `get`/`at`/`size` and read with
-  `asInt`/`asFloat`/`asBool`/`asString` (plus `isNull`/`isArray`/... shape
-  checks). The parser is written in Tawla itself.
+- **JSON:** `import "Json.twl";` then `parseJson(text)` returns a `Json` value
+  you navigate with `get`/`at`/`size` and read with
+  `asInt`/`asFloat`/`asBool`/`asString` (plus `isNull`/`isArray`/... checks).
+  Build with `jsonObject()`/`jsonArray()` + `setString`/`setInt`/`set`/`push…`
+  and `toString()`; in a handler, `req.respondJson(200, out.toString())` sends
+  `application/json`. The whole parser/serializer is written in Tawla itself.
 - **`panic(s)`:** print a message and abort, for unrecoverable errors.
 - **HTTP server:** `import "Http.twl";` gives you a `Server`, a `Request`
   (`method`/`path`/`body`/`respond`), and an Express-style `Router` with

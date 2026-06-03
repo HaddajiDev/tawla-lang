@@ -1,0 +1,18 @@
+// Building and serializing JSON.
+import "Json.twl";
+
+class Main {
+    void main() {
+        Json user = jsonObject();
+        user.setString("name", "Ada");
+        user.setInt("age", 36);
+
+        Json langs = jsonArray();
+        langs.pushString("twl");
+        langs.pushString("py");
+        user.set("langs", langs);
+
+        print(user.toString());
+        // {"name":"Ada","age":36,"langs":["twl","py"]}
+    }
+}
