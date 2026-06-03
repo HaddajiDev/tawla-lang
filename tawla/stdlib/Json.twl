@@ -1,0 +1,208 @@
+// Tawla's JSON reader. Import with:  import "Json.twl";
+//
+// parseJson(text) returns a Json value. Navigate objects/arrays with get/at,
+// read scalars with asInt/asFloat/asBool/asString, and check shape with isX.
+
+import "Collections.twl";
+
+class Json {
+    // kind: 0 null, 1 bool, 2 number, 3 string, 4 array, 5 object.
+    public int kind;
+    public bool boolVal;
+    public float numVal;
+    public string strVal;
+    public List<Json> arr;
+    public Map<string, Json> obj;
+
+    public bool isNull()   { return this.kind == 0; }
+    public bool isBool()   { return this.kind == 1; }
+    public bool isNumber() { return this.kind == 2; }
+    public bool isString() { return this.kind == 3; }
+    public bool isArray()  { return this.kind == 4; }
+    public bool isObject() { return this.kind == 5; }
+
+    public bool asBool()     { return this.boolVal; }
+    public float asFloat()   { return this.numVal; }
+    public int asInt()       { return toInt(toString(this.numVal)); }
+    public string asString() { return this.strVal; }
+
+    public int size() {
+        if (this.kind == 4) { return this.arr.size(); }
+        if (this.kind == 5) { return this.obj.size(); }
+        return 0;
+    }
+
+    public Json at(int i) {
+        if (this.kind == 4) { return this.arr.get(i); }
+        return new Json();
+    }
+
+    public Json get(string key) {
+        if (this.kind == 5 && this.obj.has(key)) { return this.obj.get(key); }
+        return new Json();
+    }
+}
+
+class JsonParser {
+    private string src;
+    private int pos;
+    private int len;
+
+    public JsonParser(string s) {
+        this.src = s;
+        this.pos = 0;
+        this.len = s.length;
+    }
+
+    public Json parse() {
+        this.skipWs();
+        return this.parseValue();
+    }
+
+    private void skipWs() {
+        bool going = true;
+        while (going && this.pos < this.len) {
+            int c = charAt(this.src, this.pos);
+            if (c == 32 || c == 9 || c == 10 || c == 13) {
+                this.pos = this.pos + 1;
+            } else {
+                going = false;
+            }
+        }
+    }
+
+    private int peek() {
+        if (this.pos >= this.len) { panic("invalid JSON"); }
+        return charAt(this.src, this.pos);
+    }
+
+    private Json parseValue() {
+        int c = this.peek();
+        if (c == 123) { return this.parseObject(); }
+        if (c == 91)  { return this.parseArray(); }
+        if (c == 34)  { return this.parseStringValue(); }
+        if (c == 116) { return this.parseKeyword("true", 1, true); }
+        if (c == 102) { return this.parseKeyword("false", 1, false); }
+        if (c == 110) { return this.parseKeyword("null", 0, false); }
+        return this.parseNumber();
+    }
+
+    private Json parseKeyword(string word, int kind, bool b) {
+        int n = word.length;
+        if (this.pos + n > this.len) { panic("invalid JSON"); }
+        if (substring(this.src, this.pos, this.pos + n) == word) {
+            this.pos = this.pos + n;
+        } else {
+            panic("invalid JSON");
+        }
+        Json j = new Json();
+        j.kind = kind;
+        j.boolVal = b;
+        return j;
+    }
+
+    private string readRawString() {
+        this.pos = this.pos + 1;
+        string result = "";
+        bool going = true;
+        while (going) {
+            if (this.pos >= this.len) { panic("invalid JSON"); }
+            int c = charAt(this.src, this.pos);
+            if (c == 34) {
+                this.pos = this.pos + 1;
+                going = false;
+            } else if (c == 92) {
+                this.pos = this.pos + 1;
+                if (this.pos >= this.len) { panic("invalid JSON"); }
+                int e = charAt(this.src, this.pos);
+                if (e == 110)      { result = result + "\n"; }
+                else if (e == 116) { result = result + "\t"; }
+                else if (e == 114) { result = result + "\r"; }
+                else if (e == 34)  { result = result + "\""; }
+                else if (e == 92)  { result = result + "\\"; }
+                else { result = result + substring(this.src, this.pos, this.pos + 1); }
+                this.pos = this.pos + 1;
+            } else {
+                result = result + substring(this.src, this.pos, this.pos + 1);
+                this.pos = this.pos + 1;
+            }
+        }
+        return result;
+    }
+
+    private Json parseStringValue() {
+        Json j = new Json();
+        j.kind = 3;
+        j.strVal = this.readRawString();
+        return j;
+    }
+
+    private Json parseNumber() {
+        int start = this.pos;
+        bool going = true;
+        while (going && this.pos < this.len) {
+            int c = charAt(this.src, this.pos);
+            if (c == 45 || c == 43 || c == 46 || c == 101 || c == 69 || (c >= 48 && c <= 57)) {
+                this.pos = this.pos + 1;
+            } else {
+                going = false;
+            }
+        }
+        if (this.pos == start) { panic("invalid JSON"); }
+        Json j = new Json();
+        j.kind = 2;
+        j.numVal = toFloat(substring(this.src, start, this.pos));
+        return j;
+    }
+
+    private Json parseArray() {
+        this.pos = this.pos + 1;
+        Json j = new Json();
+        j.kind = 4;
+        j.arr = new List<Json>();
+        this.skipWs();
+        if (this.peek() == 93) { this.pos = this.pos + 1; return j; }
+        bool more = true;
+        while (more) {
+            this.skipWs();
+            j.arr.add(this.parseValue());
+            this.skipWs();
+            int c = this.peek();
+            if (c == 44) { this.pos = this.pos + 1; }
+            else if (c == 93) { this.pos = this.pos + 1; more = false; }
+            else { panic("invalid JSON"); }
+        }
+        return j;
+    }
+
+    private Json parseObject() {
+        this.pos = this.pos + 1;
+        Json j = new Json();
+        j.kind = 5;
+        j.obj = new Map<string, Json>();
+        this.skipWs();
+        if (this.peek() == 125) { this.pos = this.pos + 1; return j; }
+        bool more = true;
+        while (more) {
+            this.skipWs();
+            if (this.peek() != 34) { panic("invalid JSON"); }
+            string key = this.readRawString();
+            this.skipWs();
+            if (this.peek() != 58) { panic("invalid JSON"); }
+            this.pos = this.pos + 1;
+            this.skipWs();
+            j.obj.put(key, this.parseValue());
+            this.skipWs();
+            int c = this.peek();
+            if (c == 44) { this.pos = this.pos + 1; }
+            else if (c == 125) { this.pos = this.pos + 1; more = false; }
+            else { panic("invalid JSON"); }
+        }
+        return j;
+    }
+}
+
+Json parseJson(string text) {
+    JsonParser p = new JsonParser(text);
+    return p.parse();
+}
