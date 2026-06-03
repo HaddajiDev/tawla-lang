@@ -41,6 +41,70 @@ class Json {
         if (this.kind == 5 && this.obj.has(key)) { return this.obj.get(key); }
         return new Json();
     }
+
+    public void setString(string key, string v) {
+        Json n = new Json(); n.kind = 3; n.strVal = v; this.obj.put(key, n);
+    }
+    public void setInt(string key, int v) {
+        Json n = new Json(); n.kind = 2; n.numVal = v; this.obj.put(key, n);
+    }
+    public void setFloat(string key, float v) {
+        Json n = new Json(); n.kind = 2; n.numVal = v; this.obj.put(key, n);
+    }
+    public void setBool(string key, bool v) {
+        Json n = new Json(); n.kind = 1; n.boolVal = v; this.obj.put(key, n);
+    }
+    public void set(string key, Json v) { this.obj.put(key, v); }
+
+    public void pushString(string v) {
+        Json n = new Json(); n.kind = 3; n.strVal = v; this.arr.add(n);
+    }
+    public void pushInt(int v) {
+        Json n = new Json(); n.kind = 2; n.numVal = v; this.arr.add(n);
+    }
+    public void pushFloat(float v) {
+        Json n = new Json(); n.kind = 2; n.numVal = v; this.arr.add(n);
+    }
+    public void pushBool(bool v) {
+        Json n = new Json(); n.kind = 1; n.boolVal = v; this.arr.add(n);
+    }
+    public void push(Json v) { this.arr.add(v); }
+
+    public string toString() {
+        if (this.kind == 0) { return "null"; }
+        if (this.kind == 1) {
+            if (this.boolVal) { return "true"; }
+            return "false";
+        }
+        if (this.kind == 2) { return toString(this.numVal); }
+        if (this.kind == 3) { return "\"" + jsonEscape(this.strVal) + "\""; }
+        if (this.kind == 4) { return this.arrayToString(); }
+        return this.objectToString();
+    }
+
+    private string arrayToString() {
+        string s = "[";
+        int i = 0;
+        while (i < this.arr.size()) {
+            if (i > 0) { s = s + ","; }
+            s = s + this.arr.get(i).toString();
+            i = i + 1;
+        }
+        return s + "]";
+    }
+
+    private string objectToString() {
+        string s = "{";
+        List<string> ks = this.obj.keys();
+        int i = 0;
+        while (i < ks.size()) {
+            if (i > 0) { s = s + ","; }
+            string k = ks.get(i);
+            s = s + "\"" + jsonEscape(k) + "\":" + this.obj.get(k).toString();
+            i = i + 1;
+        }
+        return s + "}";
+    }
 }
 
 class JsonParser {
@@ -205,4 +269,34 @@ class JsonParser {
 Json parseJson(string text) {
     JsonParser p = new JsonParser(text);
     return p.parse();
+}
+
+Json jsonObject() {
+    Json j = new Json();
+    j.kind = 5;
+    j.obj = new Map<string, Json>();
+    return j;
+}
+
+Json jsonArray() {
+    Json j = new Json();
+    j.kind = 4;
+    j.arr = new List<Json>();
+    return j;
+}
+
+string jsonEscape(string s) {
+    string out = "";
+    int i = 0;
+    while (i < s.length) {
+        int c = charAt(s, i);
+        if (c == 34)      { out = out + "\\\""; }
+        else if (c == 92) { out = out + "\\\\"; }
+        else if (c == 10) { out = out + "\\n"; }
+        else if (c == 9)  { out = out + "\\t"; }
+        else if (c == 13) { out = out + "\\r"; }
+        else { out = out + substring(s, i, i + 1); }
+        i = i + 1;
+    }
+    return out;
 }
