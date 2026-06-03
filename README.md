@@ -88,7 +88,9 @@ tawlac help            # or: tawlac help run
 - **Abstract classes:** mark a class `abstract` and leave some methods without a
   body for subclasses to fill in.
 - **Generics:** `class Box<T> { ... }`, used as `Box<int>` or `Box<string>`.
-- **Strings:** literals with escapes, `s.length`, `==`, and `+` to join them.
+- **Strings:** literals with escapes, `s.length`, `==`, and `+` to join them,
+  plus `charAt(s, i)` (character code), `substring(s, a, b)`, `toInt(s)` /
+  `toFloat(s)`, and `toString(n)` (number to string).
 - **Arrays:** `new int[n]`, indexing with `a[i]` (bounds-checked, so you get a
   clear error instead of a crash), and `a.length`.
 - **Comments:** `// like this`.

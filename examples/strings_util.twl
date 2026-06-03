@@ -1,0 +1,16 @@
+// String utilities: charAt, substring, toInt, toFloat, toString.
+
+class Main {
+    void main() {
+        string s = "hello";
+        print(s.length);                 // 5
+        print(charAt(s, 0));             // 104  (code for 'h')
+        print(substring(s, 1, 4));       // ell
+
+        int n = toInt("40") + 2;
+        print(toString(n));              // 42
+
+        float f = toFloat("1.5") * 2.0;
+        print(toString(f));              // 3
+    }
+}
