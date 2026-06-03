@@ -1,0 +1,19 @@
+// Calling another HTTP service. Point the URL at something reachable, e.g. a
+// local server (run examples/server.twl in another terminal first).
+import "Http.twl";
+import "Json.twl";
+
+class Main {
+    void main() {
+        Response r = fetch("http://localhost:8080/health");
+        print(r.status());        // 200 if the server is up
+        print(r.body());
+
+        // POST some JSON and read the echoed response
+        Json payload = jsonObject();
+        payload.setString("name", "ada");
+        Response created = httpRequest("POST", "http://localhost:8080/echo", payload.toString());
+        print(created.status());
+        print(created.body());
+    }
+}

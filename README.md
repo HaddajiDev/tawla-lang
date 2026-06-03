@@ -114,6 +114,9 @@ tawlac help            # or: tawlac help run
   (`method`/`path`/`body`/`respond`), and an Express-style `Router` with
   `Handler` classes — `router.get("/health", new Health())` then
   `new Server(8080).serve(router)`. Single-threaded, minimal HTTP/1.1.
+- **HTTP client (`fetch`):** `fetch(url)` (GET) or `httpRequest(method, url, body)`
+  returns a `Response` with `status()` and `body()` — call other services.
+  Network failures come back as `status() == 0`.
 - **Built-in functions:** a handful of predefined functions you can call without
   declaring anything — `sqrt`, `pow`, `abs`, `min`, `max`, `floor`, `ceil` for
   math, plus `collect()`/`__live()` for the GC.
