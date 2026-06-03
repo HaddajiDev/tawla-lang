@@ -111,6 +111,16 @@ class CodeGen:
         self.strcmp = ir.Function(self.module, ir.FunctionType(i32, [i8ptr, i8ptr]), name="strcmp")
         self.strcpy = ir.Function(self.module, ir.FunctionType(i8ptr, [i8ptr, i8ptr]), name="strcpy")
         self.strcat = ir.Function(self.module, ir.FunctionType(i8ptr, [i8ptr, i8ptr]), name="strcat")
+        self.memcpy = ir.Function(
+            self.module, ir.FunctionType(i8ptr, [i8ptr, i8ptr, i64]), name="memcpy"
+        )
+        self.atoi = ir.Function(self.module, ir.FunctionType(i32, [i8ptr]), name="atoi")
+        self.strtod = ir.Function(
+            self.module, ir.FunctionType(f64, [i8ptr, i8ptr.as_pointer()]), name="strtod"
+        )
+        self.snprintf = ir.Function(
+            self.module, ir.FunctionType(i32, [i8ptr, i64, i8ptr], var_arg=True), name="snprintf"
+        )
 
         void = ir.VoidType()
         self.gc_alloc = ir.Function(self.module, ir.FunctionType(i8ptr, [i64]), name="gc_alloc")
@@ -140,6 +150,9 @@ class CodeGen:
         self._fmt_str = self._global_string(b"%s\n\0", "fmt_str")
         self._fmt_float = self._global_string(b"%g\n\0", "fmt_float")
         self._fmt_str_raw = self._global_string(b"%s\0", "fmt_str_raw")
+        self._fmt_d = self._global_string(b"%d\0", "fmt_d")
+        self._fmt_g = self._global_string(b"%g\0", "fmt_g")
+        self._str_oob_msg = self._global_string(b"string index out of range\n\0", "str_oob_msg")
 
         self.null_ty = self.module.context.get_identified_type("$null")  # stays opaque
         self.null_ptr = self.null_ty.as_pointer()
@@ -699,6 +712,18 @@ class CodeGen:
             arr, [ir.Constant(i32, 0), ir.Constant(i32, 1), idx], inbounds=True
         )
 
+    def _str_oob(self, bad: ir.Value) -> None:
+        """If `bad` (i1) is true, print the string-index message and exit."""
+        func = self.builder.function
+        err_bb = func.append_basic_block("str.oob")
+        ok_bb = func.append_basic_block("str.ok")
+        self.builder.cbranch(bad, err_bb, ok_bb)
+        self.builder.position_at_end(err_bb)
+        self.builder.call(self.printf, [self._str_ptr(self._str_oob_msg)])
+        self.builder.call(self.exit, [ir.Constant(i32, 1)])
+        self.builder.unreachable()
+        self.builder.position_at_end(ok_bb)
+
     def _null_check(self, ptr: ir.Value) -> None:
         """Abort with 'null reference' if `ptr` is null. `ptr` must be a pointer."""
         is_null = self.builder.icmp_signed("==", ptr, ir.Constant(ptr.type, None))
@@ -907,6 +932,35 @@ class CodeGen:
             status = self._gen_expr(args[1])
             body = self._gen_expr(args[2])
             return self.builder.call(self.http_respond, [rid, status, body])
+        if name == "charAt":
+            s = self._gen_expr(args[0])
+            i = self._gen_expr(args[1])
+            length = self.builder.trunc(self.builder.call(self.strlen, [s]), i32)
+            below = self.builder.icmp_signed("<", i, ir.Constant(i32, 0))
+            above = self.builder.icmp_signed(">=", i, length)
+            self._str_oob(self.builder.or_(below, above))
+            ch = self.builder.load(self.builder.gep(s, [i], inbounds=True))
+            return self.builder.zext(ch, i32)
+        if name == "substring":
+            s = self._gen_expr(args[0])
+            start = self._gen_expr(args[1])
+            end = self._gen_expr(args[2])
+            length = self.builder.trunc(self.builder.call(self.strlen, [s]), i32)
+            bad = self.builder.or_(
+                self.builder.or_(
+                    self.builder.icmp_signed("<", start, ir.Constant(i32, 0)),
+                    self.builder.icmp_signed(">", end, length),
+                ),
+                self.builder.icmp_signed(">", start, end),
+            )
+            self._str_oob(bad)
+            n = self.builder.sub(end, start)
+            n64 = self.builder.sext(n, i64)
+            buf = self.builder.call(self.gc_alloc, [self.builder.add(n64, ir.Constant(i64, 1))])
+            src = self.builder.gep(s, [start], inbounds=True)
+            self.builder.call(self.memcpy, [buf, src, n64])
+            self.builder.store(ir.Constant(i8, 0), self.builder.gep(buf, [n], inbounds=True))
+            return buf
         raise CodeGenError(f"unknown builtin {name!r}")
 
     def _flush_stdout(self) -> None:

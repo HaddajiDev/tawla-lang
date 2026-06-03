@@ -114,6 +114,8 @@ _BUILTINS = {
     "__http_path": ([INT], STRING),
     "__http_body": ([INT], STRING),
     "__http_respond": ([INT, INT, STRING], VOID),
+    "charAt": ([STRING, INT], INT),
+    "substring": ([STRING, INT, INT], STRING),
 }
 
 # Math builtins, keyed by name -> number of arguments. Their argument and return
