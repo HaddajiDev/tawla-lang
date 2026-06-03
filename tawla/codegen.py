@@ -144,6 +144,11 @@ class CodeGen:
         self.http_respond = ir.Function(
             self.module, ir.FunctionType(void, [i32, i32, i8ptr, i8ptr]), name="__http_respond"
         )
+        self.fetch_fn = ir.Function(
+            self.module, ir.FunctionType(i32, [i8ptr, i8ptr, i8ptr]), name="__fetch"
+        )
+        self.fetch_status = ir.Function(self.module, ir.FunctionType(i32, [i32]), name="__fetch_status")
+        self.fetch_body = ir.Function(self.module, ir.FunctionType(i8ptr, [i32]), name="__fetch_body")
 
         self._fmt_int = self._global_string(b"%d\n\0", "fmt_int")
         self._fmt_str = self._global_string(b"%s\n\0", "fmt_str")
@@ -930,6 +935,15 @@ class CodeGen:
             ctype = self._gen_expr(args[2])
             body = self._gen_expr(args[3])
             return self.builder.call(self.http_respond, [rid, status, ctype, body])
+        if name == "__fetch":
+            method = self._gen_expr(args[0])
+            url = self._gen_expr(args[1])
+            body = self._gen_expr(args[2])
+            return self.builder.call(self.fetch_fn, [method, url, body])
+        if name == "__fetch_status":
+            return self.builder.call(self.fetch_status, [self._gen_expr(args[0])])
+        if name == "__fetch_body":
+            return self.builder.call(self.fetch_body, [self._gen_expr(args[0])])
         if name == "charAt":
             s = self._gen_expr(args[0])
             i = self._gen_expr(args[1])
