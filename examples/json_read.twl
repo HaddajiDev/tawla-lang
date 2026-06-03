@@ -1,0 +1,17 @@
+// Parsing JSON into a navigable value.
+import "Json.twl";
+
+class Main {
+    void main() {
+        Json u = parseJson("{\"name\": \"Ada\", \"age\": 36, \"langs\": [\"twl\", \"py\"]}");
+
+        print(u.get("name").asString());        // Ada
+        print(u.get("age").asInt());            // 36
+        print(u.get("langs").size());           // 2
+        print(u.get("langs").at(0).asString()); // twl
+
+        if (u.get("admin").isNull()) {
+            print("no admin field");
+        }
+    }
+}
