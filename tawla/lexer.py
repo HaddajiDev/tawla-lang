@@ -8,8 +8,6 @@ operators. Anything we don't recognize is a lexical error.
 from .tokens import KEYWORDS, Token, TokenKind
 
 _SINGLE = {
-    "+": TokenKind.PLUS,
-    "-": TokenKind.MINUS,
     "*": TokenKind.STAR,
     "/": TokenKind.SLASH,
     "(": TokenKind.LPAREN,
@@ -119,6 +117,10 @@ def tokenize(src: str) -> list[Token]:
             if nxt != "|":
                 raise LexError(f"unexpected character '|' at position {i}")
             kind, text = TokenKind.OR, "||"
+        elif c == "+":
+            kind, text = (TokenKind.PLUS_PLUS, "++") if nxt == "+" else (TokenKind.PLUS, "+")
+        elif c == "-":
+            kind, text = (TokenKind.MINUS_MINUS, "--") if nxt == "-" else (TokenKind.MINUS, "-")
         else:
             kind = text = None
 

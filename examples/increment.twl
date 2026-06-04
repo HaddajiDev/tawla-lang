@@ -1,0 +1,23 @@
+// Increment / decrement operators: ++ and -- are shorthand for
+// "add or subtract one". They are statements (no value), and work on
+// variables, object fields, and array elements.
+
+class Main {
+    void main() {
+        int sum = 0;
+        for (int i = 1; i <= 5; i++) {
+            sum = sum + i;
+        }
+        print(sum);            // 15
+
+        int n = 3;
+        n--;
+        --n;
+        print(n);              // 1
+
+        int[] a = new int[3];
+        a[0] = 41;
+        a[0]++;
+        print(a[0]);           // 42
+    }
+}
