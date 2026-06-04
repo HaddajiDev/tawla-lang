@@ -63,8 +63,11 @@ tawlac help            # or: tawlac help run
 - **Numbers:** integer math with `int`, and 64-bit floating point with `float`
   (or `double` — same thing). Ints widen to floats automatically when you mix
   them, so `7.0 / 2` is `3.5` while `7 / 2` stays `3`.
-- **`for` loops:** the C-style `for (int i = 0; i < n; i = i + 1) { ... }`, with
+- **`for` loops:** the C-style `for (int i = 0; i < n; i++) { ... }`, with
   the loop variable scoped to the loop.
+- **Increment/decrement:** `i++`, `++i`, `i--`, `--i` as shorthand for
+  `i = i + 1` / `i = i - 1` (statement form — works on variables, fields, and
+  array elements).
 - **Logical operators:** `&&`, `||`, and `!` on bools, with short-circuit
   evaluation (so `u != null && u.alive()` is safe).
 - **Ternary:** `cond ? a : b` picks a value inline (lazy — only the taken
