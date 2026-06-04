@@ -384,7 +384,13 @@ class Parser:
                 return self.return_stmt()
             case TokenKind.KW_SUPER:
                 return self.super_stmt()
-            case TokenKind.IDENT | TokenKind.KW_THIS | TokenKind.KW_NEW:
+            case (
+                TokenKind.IDENT
+                | TokenKind.KW_THIS
+                | TokenKind.KW_NEW
+                | TokenKind.PLUS_PLUS
+                | TokenKind.MINUS_MINUS
+            ):
                 return self.assign_or_expr_stmt()
         raise ParseError(
             f"expected a statement, got {self.current.kind.name} "
@@ -410,7 +416,23 @@ class Parser:
         name = self.expect(TokenKind.IDENT).text
         return self._finish_var(var_type, name)
 
+    def _incdec_to_assign(self, target, op_kind) -> Stmt:
+        """Desugar x++ / ++x / x-- / --x into  target = target (+|-) 1."""
+        if not isinstance(target, (Identifier, FieldAccess, Index)):
+            raise ParseError("'++' and '--' require a variable, field, or array element")
+        op = "+" if op_kind is TokenKind.PLUS_PLUS else "-"
+        return Assign(target, BinaryOp(op, target, IntLiteral(1)))
+
     def assign_or_expr_stmt(self) -> Stmt:
+        # Prefix ++x / --x
+        if self.current.kind in (TokenKind.PLUS_PLUS, TokenKind.MINUS_MINUS):
+            op_kind = self.current.kind
+            self.advance()
+            target = self.expr()
+            stmt = self._incdec_to_assign(target, op_kind)
+            self.expect(TokenKind.SEMICOLON)
+            return stmt
+
         expr = self.expr()
         if self.current.kind is TokenKind.ASSIGN:
             self.advance()
@@ -419,6 +441,13 @@ class Parser:
             if not isinstance(expr, (Identifier, FieldAccess, Index)):
                 raise ParseError("invalid assignment target")
             return Assign(expr, value)
+        # Postfix x++ / x--
+        if self.current.kind in (TokenKind.PLUS_PLUS, TokenKind.MINUS_MINUS):
+            op_kind = self.current.kind
+            self.advance()
+            stmt = self._incdec_to_assign(expr, op_kind)
+            self.expect(TokenKind.SEMICOLON)
+            return stmt
         self.expect(TokenKind.SEMICOLON)
         return ExprStmt(expr)
 
