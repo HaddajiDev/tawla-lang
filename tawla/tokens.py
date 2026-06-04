@@ -37,6 +37,8 @@ class TokenKind(Enum):
     KW_IMPORT = auto()
     PLUS = auto()
     MINUS = auto()
+    PLUS_PLUS = auto()
+    MINUS_MINUS = auto()
     STAR = auto()
     SLASH = auto()
     LT = auto()
