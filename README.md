@@ -9,6 +9,8 @@ the spot, so there's no separate "compile then run" dance.
 It started as a learning project to understand how compilers actually work, and
 it grew into a genuinely usable little language. Source files end in `.twl`.
 
+📖 **Documentation:** https://haddajidev.github.io/tawla-lang-docs/
+
 Here's the whole "hello world":
 
 ```tawla
