@@ -92,3 +92,21 @@ def test_for_loop_postfix_init(run_twl):
     # init clause uses ++ too (handled by assign_or_expr_stmt)
     src = "int i = 0; for (i++; i < 3; i++) { print(i); }"
     assert run_twl(src).stdout == "1\n2\n"
+
+
+def test_increment_non_numeric_is_sema_error(run_twl):
+    # string s; s++  desugars to  s = s + 1  -> numeric-operands sema error
+    r = run_twl('string s = "x"; s++; print(s);')
+    assert r.returncode != 0
+    assert "numeric" in r.stderr
+
+
+def test_increment_in_expression_is_parse_error(run_twl):
+    # statement-only: ++ cannot produce a value
+    r = run_twl("int y = 0; int z = y++; print(z);")
+    assert r.returncode != 0
+
+
+def test_print_of_increment_is_parse_error(run_twl):
+    r = run_twl("int i = 0; print(i++);")
+    assert r.returncode != 0
