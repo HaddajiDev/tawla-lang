@@ -507,6 +507,13 @@ class Parser:
     def _simple_step(self) -> Stmt:
         """The third clause of a for-loop: an assignment or expression, but with
         no trailing ';' (the ')' ends it)."""
+        # Prefix ++x / --x
+        if self.current.kind in (TokenKind.PLUS_PLUS, TokenKind.MINUS_MINUS):
+            op_kind = self.current.kind
+            self.advance()
+            target = self.expr()
+            return self._incdec_to_assign(target, op_kind)
+
         expr = self.expr()
         if self.current.kind is TokenKind.ASSIGN:
             self.advance()
@@ -514,6 +521,11 @@ class Parser:
             if not isinstance(expr, (Identifier, FieldAccess, Index)):
                 raise ParseError("invalid assignment target in for-loop step")
             return Assign(expr, value)
+        # Postfix x++ / x--
+        if self.current.kind in (TokenKind.PLUS_PLUS, TokenKind.MINUS_MINUS):
+            op_kind = self.current.kind
+            self.advance()
+            return self._incdec_to_assign(expr, op_kind)
         return ExprStmt(expr)
 
     def return_stmt(self) -> Stmt:

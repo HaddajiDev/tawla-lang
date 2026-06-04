@@ -71,3 +71,24 @@ def test_subtraction_and_unary_minus_still_lex(run_twl):
     # Guards that splitting +/- into the two-char chain didn't break single -.
     assert run_twl("int a = 10 - 3; print(a);").stdout == "7\n"
     assert run_twl("int b = 0 - 5; print(b);").stdout == "-5\n"
+
+
+def test_for_loop_postfix_step(run_twl):
+    src = "for (int i = 0; i < 3; i++) { print(i); }"
+    assert run_twl(src).stdout == "0\n1\n2\n"
+
+
+def test_for_loop_prefix_step(run_twl):
+    src = "for (int i = 0; i < 3; ++i) { print(i); }"
+    assert run_twl(src).stdout == "0\n1\n2\n"
+
+
+def test_for_loop_decrement_step(run_twl):
+    src = "for (int i = 3; i > 0; i--) { print(i); }"
+    assert run_twl(src).stdout == "3\n2\n1\n"
+
+
+def test_for_loop_postfix_init(run_twl):
+    # init clause uses ++ too (handled by assign_or_expr_stmt)
+    src = "int i = 0; for (i++; i < 3; i++) { print(i); }"
+    assert run_twl(src).stdout == "1\n2\n"
