@@ -106,11 +106,31 @@ registered via `llvm.add_symbol`:
 - `__eh_msg() -> char*` — read the stored message (for the catch binding).
 
 `setjmp` and `longjmp` themselves are the **C library** functions (not Python).
-Their addresses are obtained via ctypes from the C runtime (`msvcrt`/`ucrtbase`
-on Windows, libc on macOS/Linux) and bound with `llvm.add_symbol` so the JIT can
-call them. The `jmp_buf` is an opaque byte buffer; codegen allocates a
-generously-sized one (e.g. 256 bytes) via `alloca` in the guarded function's
-frame.
+Their addresses are obtained via ctypes from the C runtime and bound with
+`llvm.add_symbol` under uniform alias names `tw_setjmp` / `tw_longjmp` so codegen
+emits one portable IR shape. The `jmp_buf` is an opaque byte buffer; codegen
+allocates a generously-sized one (256 bytes) via `alloca` in the guarded
+function's frame.
+
+**Verified mechanism (from the feasibility spike, run before this plan):**
+
+- IR always declares `i32 @tw_setjmp(i8*, i8*)` and `void @tw_longjmp(i8*, i32)`,
+  and always calls `tw_setjmp(buf, null)` with the `setjmp` call marked
+  `returns_twice`.
+- **Windows:** plain `setjmp` from the CRT is SEH-based and **crashes** under
+  MCJIT (it needs a frame-pointer arg the JIT buffer lacks). The working binding
+  is `msvcrt.dll`'s **`_setjmp`** called as the 2-arg form with a NULL second
+  argument — this is the non-SEH setjmp and round-trips correctly. `longjmp`
+  comes from `msvcrt.dll`.
+- **macOS / Linux:** bind libc `setjmp`/`longjmp`. libc `setjmp` is 1-arg; the IR
+  passes a harmless extra NULL second argument, which is ignored under the
+  x86-64 SysV / ARM64 calling conventions (caller-passed register, callee never
+  reads it). This keeps the IR identical across platforms.
+- The spike confirmed on Windows: a normal (no-throw) path returns normally; a
+  throw raised two call-frames deep (`run → mid → thrower → longjmp`) unwinds
+  back to the `setjmp` and returns the longjmp value; and re-invoking the
+  function after a catch does not corrupt state. The throw fetched the target
+  `jmp_buf` through a Python-hosted handler-stack symbol, exactly as designed.
 
 ### Codegen — `fuck_around`/`find_out`
 
@@ -205,11 +225,14 @@ already popped, so only outer handlers are unwound.
 
 ## Risks
 
-- **`setjmp`/`longjmp` under MCJIT is the central risk**, especially on Windows
-  (CRT setjmp / SEH interactions) and getting `returns_twice` codegen right.
-  **The implementation plan's first task is a feasibility spike**: prove a
-  setjmp→longjmp round-trip works in our llvmlite JIT before building any of the
-  language layer. If the spike fails, stop and reconsider the mechanism.
+- **`setjmp`/`longjmp` under MCJIT** — this was the central risk. A feasibility
+  spike (run before this plan) **resolved it**: the Windows-specific
+  `msvcrt._setjmp(buf, NULL)` binding works under MCJIT, including a throw two
+  call-frames deep and safe re-invocation. macOS/Linux use libc `setjmp`/
+  `longjmp` and are verified by the CI smoke test (a throw/catch line is added to
+  the release smoke program). The remaining residual risk is the Unix
+  extra-ignored-argument ABI assumption, which CI confirms on the actual mac and
+  Linux runners.
 - `jmp_buf` size is platform-dependent; we over-allocate (256 bytes) to be safe.
 - The three OS binaries must each be re-verified (the CI smoke tests cover
   build + a basic run; a thrown-and-caught example can be added to the smoke set
