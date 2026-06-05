@@ -144,6 +144,10 @@ tawlac help            # or: tawlac help run
   and `toString()`; in a handler, `req.respondJson(200, out.toString())` sends
   `application/json`. The whole parser/serializer is written in Tawla itself.
 - **`panic(s)`:** print a message and abort, for unrecoverable errors.
+- **Exceptions:** `fuck_around { ... } find_out (e) { ... }` is try/catch — `e`
+  is the error message string. `throw "msg";` raises one, and built-in errors
+  (`panic`, null dereference, array-out-of-bounds) are catchable too. Use bare
+  `find_out { ... }` to ignore the message.
 - **HTTP server:** `import "Http.twl";` gives you a `Server`, a `Request`
   (`method`/`path`/`body`/`respond`), and an Express-style `Router` with
   `Handler` classes — `router.get("/health", new Health())` then

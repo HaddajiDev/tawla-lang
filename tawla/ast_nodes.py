@@ -125,6 +125,18 @@ class ExprStmt(Stmt):
 
 
 @dataclass
+class Throw(Stmt):
+    value: Expr
+
+
+@dataclass
+class TryCatch(Stmt):
+    try_body: list
+    catch_var: str | None
+    catch_body: list
+
+
+@dataclass
 class PrintStmt(Stmt):
     expr: Expr
 

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import llvmlite.binding as llvm
 
-from . import fetch_runtime, gc_runtime, http_runtime, io_runtime, str_runtime
+from . import eh_runtime, fetch_runtime, gc_runtime, http_runtime, io_runtime, str_runtime
 from .codegen import build_module
 from .lexer import tokenize
 from .loader import load_program, resolve_imports
@@ -59,6 +59,7 @@ def _run_items(ast: list) -> int:
 
     _initialize()
     gc_runtime.install()
+    eh_runtime.install()
     io_runtime.install()
     http_runtime.install()
     str_runtime.install()

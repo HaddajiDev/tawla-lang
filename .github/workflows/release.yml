@@ -43,7 +43,7 @@ jobs:
           BIN="${{ matrix.bin }}"
           "$BIN" version | grep -q "tawlac"
           "$BIN" run examples/hello.twl | tr -d '\r' | grep -xq "10"
-          "$BIN" run examples/smoke.twl | tr -d '\r' | tr '\n' ' ' | grep -q "2 8"
+          "$BIN" run examples/smoke.twl | tr -d '\r' | tr '\n' ' ' | grep -q "2 8 z"
 
       - name: Stage asset
         shell: bash

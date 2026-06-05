@@ -220,14 +220,18 @@ already popped, so only outer handlers are unwound.
 
 ## Risks
 
-- **`setjmp`/`longjmp` under MCJIT** — this was the central risk. A feasibility
-  spike (run before this plan) **resolved it**: the Windows-specific
-  `msvcrt._setjmp(buf, NULL)` binding works under MCJIT, including a throw two
-  call-frames deep and safe re-invocation. macOS/Linux use libc `setjmp`/
-  `longjmp` and are verified by the CI smoke test (a throw/catch line is added to
-  the release smoke program). The remaining residual risk is the Unix
-  extra-ignored-argument ABI assumption, which CI confirms on the actual mac and
-  Linux runners.
+- **`setjmp`/`longjmp` under MCJIT** — this was the central risk, and it bit:
+  the Windows CRT `longjmp` works under bare Python but **crashes inside a
+  PyInstaller-frozen binary**, because the CRT's x64 `longjmp` does SEH-based
+  stack unwinding (`RtlUnwindEx`) through JIT frames that have no registered
+  unwind info. **Fix:** on Windows, `eh_runtime` provides its own `tw_setjmp`/
+  `tw_longjmp` as tiny `naked` functions doing a pure register save/restore (no
+  unwind), assembled by LLVM at startup (requires
+  `initialize_native_asmparser()`). They save/restore the Win64 callee-saved set
+  (RBX, RBP, RDI, RSI, R12-R15, RSP, return address, XMM6-XMM15) in the 256-byte
+  `jmp_buf`. Verified working in the frozen Windows binary (throw, nested,
+  rethrow, catchable built-ins). macOS/Linux keep libc `setjmp`/`longjmp` (no
+  SEH), verified by CI.
 - `jmp_buf` size is platform-dependent; we over-allocate (256 bytes) to be safe.
 - The three OS binaries must each be re-verified (the CI smoke tests cover
   build + a basic run; a thrown-and-caught example can be added to the smoke set

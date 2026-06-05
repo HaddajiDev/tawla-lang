@@ -30,6 +30,8 @@ from .ast_nodes import (
     NullLiteral,
     PrintStmt,
     Return,
+    Throw,
+    TryCatch,
     Stmt,
     StringLiteral,
     SuperCall,
@@ -505,6 +507,21 @@ class Sema:
                 raise SemaError(
                     f"cannot return {value_type} from a {self.current_ret} function"
                 )
+
+        elif isinstance(stmt, Throw):
+            t = self._check_expr(stmt.value)
+            if t != STRING:
+                raise SemaError(f"throw requires a string, got {t}")
+
+        elif isinstance(stmt, TryCatch):
+            for s in stmt.try_body:
+                self._check_stmt(s)
+            saved = dict(self.scope)          # catch var is scoped to the catch body
+            if stmt.catch_var is not None:
+                self.scope[stmt.catch_var] = STRING
+            for s in stmt.catch_body:
+                self._check_stmt(s)
+            self.scope = saved
 
         else:
             raise SemaError(f"cannot type-check statement {type(stmt).__name__}")
