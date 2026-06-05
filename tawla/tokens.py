@@ -35,6 +35,9 @@ class TokenKind(Enum):
     KW_ABSTRACT = auto()
     KW_SUPER = auto()
     KW_IMPORT = auto()
+    KW_FUCK_AROUND = auto()
+    KW_FIND_OUT = auto()
+    KW_THROW = auto()
     PLUS = auto()
     MINUS = auto()
     PLUS_PLUS = auto()
@@ -89,6 +92,9 @@ KEYWORDS = {
     "abstract": TokenKind.KW_ABSTRACT,
     "super": TokenKind.KW_SUPER,
     "import": TokenKind.KW_IMPORT,
+    "fuck_around": TokenKind.KW_FUCK_AROUND,
+    "find_out": TokenKind.KW_FIND_OUT,
+    "throw": TokenKind.KW_THROW,
     "public": TokenKind.KW_PUBLIC,
     "protected": TokenKind.KW_PROTECTED,
     "private": TokenKind.KW_PRIVATE,

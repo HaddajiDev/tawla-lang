@@ -75,6 +75,8 @@ from .ast_nodes import (
     Ternary,
     PrintStmt,
     Return,
+    Throw,
+    TryCatch,
     Stmt,
     StringLiteral,
     SuperCall,
@@ -382,6 +384,10 @@ class Parser:
                 return self.for_stmt()
             case TokenKind.KW_RETURN:
                 return self.return_stmt()
+            case TokenKind.KW_THROW:
+                return self.throw_stmt()
+            case TokenKind.KW_FUCK_AROUND:
+                return self.try_catch_stmt()
             case TokenKind.KW_SUPER:
                 return self.super_stmt()
             case (
@@ -533,6 +539,24 @@ class Parser:
         value = None if self.current.kind is TokenKind.SEMICOLON else self.expr()
         self.expect(TokenKind.SEMICOLON)
         return Return(value)
+
+    def throw_stmt(self) -> Stmt:
+        self.expect(TokenKind.KW_THROW)
+        value = self.expr()
+        self.expect(TokenKind.SEMICOLON)
+        return Throw(value)
+
+    def try_catch_stmt(self) -> Stmt:
+        self.expect(TokenKind.KW_FUCK_AROUND)
+        try_body = self.block()
+        self.expect(TokenKind.KW_FIND_OUT)
+        catch_var = None
+        if self.current.kind is TokenKind.LPAREN:
+            self.advance()
+            catch_var = self.expect(TokenKind.IDENT).text
+            self.expect(TokenKind.RPAREN)
+        catch_body = self.block()
+        return TryCatch(try_body, catch_var, catch_body)
 
     def super_stmt(self) -> Stmt:
         self.expect(TokenKind.KW_SUPER)
