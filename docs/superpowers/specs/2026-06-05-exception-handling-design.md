@@ -70,11 +70,9 @@ block (same block grammar as `if`/`while`).
    installed by enclosing `fuck_around` blocks in the current function before
    returning.
 
-6. **`break` / `continue`** may **not** cross a `fuck_around`/`find_out`
-   boundary in v1 — doing so is a sema error
-   ("cannot break/continue out of a fuck_around block"). A `break`/`continue`
-   whose target loop is *inside* the guarded block is fine. This restriction can
-   be lifted later.
+6. **`break` / `continue` do not exist in Tawla**, so there is no
+   loop-escape interaction to handle — `return` is the only non-local exit out of
+   a guarded block, and it is handled (item 5).
 
 7. **Nesting** works: handlers form a stack; the innermost active one catches.
 
@@ -189,8 +187,7 @@ already popped, so only outer handlers are unwound.
 - `tawla/parser.py` — parse `fuck_around` block + required `find_out` (optional
   `(ident)`); parse `throw expr;`. Dispatch in `statement()`.
 - `tawla/sema.py` — `throw` requires a `string`; `find_out (e)` introduces `e:
-  string` in the catch scope; reject `break`/`continue` crossing a `fuck_around`
-  boundary.
+  string` in the catch scope (saved/restored like the `for`-loop variable scope).
 - `tawla/monomorphize.py` — recurse through the new nodes (pass-through, like
   other statements).
 - `tawla/codegen.py` — emit the handler install/catch and the throw/longjmp;
@@ -218,8 +215,6 @@ already popped, so only outer handlers are unwound.
 - `return` from inside a `fuck_around` body returns the right value (handler
   popped, no stack corruption on a later call).
 - `return` from inside a `find_out` body works.
-- sema error: `break;`/`continue;` that crosses a `fuck_around` boundary is
-  rejected.
 - GC: allocate objects inside a caught `fuck_around`, then `collect()` and check
   `__live()` is sane (roots from the unwound frame were released).
 
@@ -242,5 +237,4 @@ already popped, so only outer handlers are unwound.
 
 - `finally` / always-runs block.
 - Exception types or objects (catch is always a `string`).
-- Catching across `break`/`continue`.
 - Multiple typed `find_out` clauses.
