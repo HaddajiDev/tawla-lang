@@ -1,0 +1,27 @@
+// Exception handling: fuck_around (try) / find_out (catch) / throw.
+// The caught value is always the error message (a string). Built-in errors
+// like panic, null dereference, and array-out-of-bounds are catchable too.
+
+class Main {
+    void main() {
+        fuck_around {
+            throw "something broke";
+        } find_out (e) {
+            print(e);                 // something broke
+        }
+
+        fuck_around {
+            int[] a = new int[2];
+            print(a[9]);              // out of bounds
+        } find_out (e) {
+            print("recovered");       // recovered
+        }
+
+        // bare find_out ignores the message
+        fuck_around {
+            panic("boom");
+        } find_out {
+            print("handled");         // handled
+        }
+    }
+}

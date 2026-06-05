@@ -11,6 +11,7 @@ datas += [("tawla/stdlib", "tawla/stdlib")]
 # Runtime modules are wired via llvm.add_symbol; list them explicitly so they
 # are always included even if static analysis misses an indirect import.
 hiddenimports += [
+    "tawla.eh_runtime",
     "tawla.gc_runtime",
     "tawla.io_runtime",
     "tawla.http_runtime",
