@@ -101,6 +101,7 @@ class CodeGen:
         )
         self.exit = ir.Function(self.module, ir.FunctionType(ir.VoidType(), [i32]), name="exit")
         self._oob_msg = self._global_string(b"array index out of bounds\n\0", "oob_msg")
+        self._oob_raw = self._global_string(b"array index out of bounds\0", "oob_raw")
 
         unary_f = ir.FunctionType(f64, [f64])
         self.libm_sqrt = ir.Function(self.module, unary_f, name="sqrt")
@@ -166,10 +167,12 @@ class CodeGen:
         self._fmt_float = self._global_string(b"%g\n\0", "fmt_float")
         self._fmt_str_raw = self._global_string(b"%s\0", "fmt_str_raw")
         self._str_oob_msg = self._global_string(b"string index out of range\n\0", "str_oob_msg")
+        self._str_oob_raw = self._global_string(b"string index out of range\0", "str_oob_raw")
 
         self.null_ty = self.module.context.get_identified_type("$null")  # stays opaque
         self.null_ptr = self.null_ty.as_pointer()
         self._null_msg = self._global_string(b"null reference\n\0", "null_msg")
+        self._null_raw = self._global_string(b"null reference\0", "null_raw")
 
     def _global_string(self, data: bytes, name: str) -> ir.GlobalVariable:
         """Create an internal constant byte array and return the global."""
@@ -792,9 +795,7 @@ class CodeGen:
         ok_bb = func.append_basic_block("str.ok")
         self.builder.cbranch(bad, err_bb, ok_bb)
         self.builder.position_at_end(err_bb)
-        self.builder.call(self.printf, [self._str_ptr(self._str_oob_msg)])
-        self.builder.call(self.exit, [ir.Constant(i32, 1)])
-        self.builder.unreachable()
+        self._raise(self._str_ptr(self._str_oob_raw))
         self.builder.position_at_end(ok_bb)
 
     def _null_check(self, ptr: ir.Value) -> None:
@@ -806,9 +807,7 @@ class CodeGen:
         self.builder.cbranch(is_null, err_bb, ok_bb)
 
         self.builder.position_at_end(err_bb)
-        self.builder.call(self.printf, [self._str_ptr(self._null_msg)])
-        self.builder.call(self.exit, [ir.Constant(i32, 1)])
-        self.builder.unreachable()
+        self._raise(self._str_ptr(self._null_raw))
 
         self.builder.position_at_end(ok_bb)
 
@@ -849,9 +848,7 @@ class CodeGen:
         self.builder.cbranch(oob, err_bb, ok_bb)
 
         self.builder.position_at_end(err_bb)
-        self.builder.call(self.printf, [self._str_ptr(self._oob_msg)])
-        self.builder.call(self.exit, [ir.Constant(i32, 1)])
-        self.builder.unreachable()
+        self._raise(self._str_ptr(self._oob_raw))
 
         self.builder.position_at_end(ok_bb)
 

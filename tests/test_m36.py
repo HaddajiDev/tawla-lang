@@ -97,3 +97,21 @@ def test_return_from_catch(run_twl):
         "}"
     )
     assert run_twl(src).stdout == "-1\n"
+
+
+def test_null_deref_caught(run_twl):
+    src = (
+        "class Box { public int n; public Box() { this.n = 1; } }"
+        "class Main { void main() {"
+        '  fuck_around { Box b; print(b.n); } find_out (e) { print("caught null"); }'
+        "} }"
+    )
+    assert run_twl(src).stdout == "caught null\n"
+
+
+def test_bounds_caught(run_twl):
+    src = (
+        'fuck_around { int[] a = new int[2]; print(a[5]); }'
+        ' find_out (e) { print("caught oob"); }'
+    )
+    assert run_twl(src).stdout == "caught oob\n"
