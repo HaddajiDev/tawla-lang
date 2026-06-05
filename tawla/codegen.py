@@ -32,6 +32,8 @@ from .ast_nodes import (
     NullLiteral,
     PrintStmt,
     Return,
+    Throw,
+    TryCatch,
     Stmt,
     StringLiteral,
     SuperCall,
@@ -127,6 +129,15 @@ class CodeGen:
         self.gc_root_depth = ir.Function(self.module, ir.FunctionType(i32, []), name="gc_root_depth")
         self.gc_root_settop = ir.Function(self.module, ir.FunctionType(void, [i32]), name="gc_root_settop")
         self.gc_collect = ir.Function(self.module, ir.FunctionType(void, []), name="gc_collect")
+        self.eh_push = ir.Function(self.module, ir.FunctionType(void, [i8ptr]), name="eh_push")
+        self.eh_pop = ir.Function(self.module, ir.FunctionType(void, []), name="eh_pop")
+        self.eh_top = ir.Function(self.module, ir.FunctionType(i8ptr, []), name="eh_top")
+        self.eh_set_msg = ir.Function(self.module, ir.FunctionType(void, [i8ptr]), name="eh_set_msg")
+        self.eh_msg = ir.Function(self.module, ir.FunctionType(i8ptr, []), name="eh_msg")
+        self.tw_setjmp = ir.Function(self.module, ir.FunctionType(i32, [i8ptr, i8ptr]), name="tw_setjmp")
+        self.tw_setjmp.attributes.add("returns_twice")
+        self.tw_longjmp = ir.Function(self.module, ir.FunctionType(void, [i8ptr, i32]), name="tw_longjmp")
+        self.tw_longjmp.attributes.add("noreturn")
         self.gc_live = ir.Function(self.module, ir.FunctionType(i32, []), name="gc_live")
 
         self.io_read_int = ir.Function(self.module, ir.FunctionType(i32, []), name="io_read_int")
@@ -457,6 +468,7 @@ class CodeGen:
         self.current_this = None
         self._depth_slot = self.alloca_builder.alloca(i32, name="gc_depth")
         self.builder.store(self.builder.call(self.gc_root_depth, []), self._depth_slot)
+        self._active_handlers = 0
         return body_bb
 
     def _emit_root_restore(self) -> None:
@@ -531,6 +543,8 @@ class CodeGen:
 
     def _gen_block(self, stmts: list[Stmt]) -> None:
         for stmt in stmts:
+            if self.builder.block.is_terminated:
+                break  # dead code after a terminator (return / throw / panic)
             self._gen_stmt(stmt)
 
     def _as_bool(self, val: ir.Value) -> ir.Value:
@@ -611,6 +625,8 @@ class CodeGen:
             return
 
         if isinstance(stmt, Return):
+            for _ in range(self._active_handlers):
+                self.builder.call(self.eh_pop, [])
             if stmt.value is None:
                 self._emit_root_restore()
                 self.builder.ret_void()
@@ -621,7 +637,62 @@ class CodeGen:
                 self.builder.ret(val)
             return
 
+        if isinstance(stmt, Throw):
+            msg = self._gen_expr(stmt.value)
+            self._raise(msg)
+            return
+
+        if isinstance(stmt, TryCatch):
+            self._gen_trycatch(stmt)
+            return
+
         raise CodeGenError(f"cannot codegen statement {type(stmt).__name__}")
+
+    def _gen_trycatch(self, stmt) -> None:
+        func = self.builder.function
+        # jmp_buf + saved GC depth, both allocated in the entry block
+        buf = self.alloca_builder.alloca(ir.ArrayType(i8, 256), name="jmpbuf")
+        buf.align = 16  # _setjmp saves XMM regs; the jmp_buf must be 16-byte aligned
+        buf_ptr = self.builder.bitcast(buf, i8ptr)
+        depth_slot = self.alloca_builder.alloca(i32, name="try_depth")
+        self.builder.store(self.builder.call(self.gc_root_depth, []), depth_slot)
+
+        self.builder.call(self.eh_push, [buf_ptr])
+        self._active_handlers += 1
+
+        r = self.builder.call(self.tw_setjmp, [buf_ptr, ir.Constant(i8ptr, None)])
+        is_zero = self.builder.icmp_signed("==", r, ir.Constant(i32, 0))
+        try_bb = func.append_basic_block("try.body")
+        catch_bb = func.append_basic_block("try.catch")
+        after_bb = func.append_basic_block("try.after")
+        self.builder.cbranch(is_zero, try_bb, catch_bb)
+
+        # --- try body (setjmp returned 0) ---
+        self.builder.position_at_end(try_bb)
+        self._gen_block(stmt.try_body)
+        if not self.builder.block.is_terminated:
+            self.builder.call(self.eh_pop, [])
+            self.builder.branch(after_bb)
+
+        # handler is no longer active for the catch body / after
+        self._active_handlers -= 1
+
+        # --- catch body (reached via longjmp; handler still on the stack) ---
+        self.builder.position_at_end(catch_bb)
+        self.builder.call(self.eh_pop, [])
+        self.builder.call(self.gc_root_settop, [self.builder.load(depth_slot)])
+        if stmt.catch_var is not None:
+            str_ty = self._llvm_type("string")
+            slot = self._alloca(stmt.catch_var, str_ty)
+            msg = self.builder.bitcast(self.builder.call(self.eh_msg, []), str_ty)
+            self.builder.store(msg, slot)
+            self.symbols[stmt.catch_var] = slot
+            self._maybe_root(slot)
+        self._gen_block(stmt.catch_body)
+        if not self.builder.block.is_terminated:
+            self.builder.branch(after_bb)
+
+        self.builder.position_at_end(after_bb)
 
     def _gen_if(self, stmt: If) -> None:
         cond = self._as_bool(self._gen_expr(stmt.cond))
@@ -740,6 +811,27 @@ class CodeGen:
         self.builder.unreachable()
 
         self.builder.position_at_end(ok_bb)
+
+    def _raise(self, msg_ptr: ir.Value) -> None:
+        """Raise an error carrying `msg_ptr` (an i8* message). If a handler is
+        installed, longjmp to it; otherwise print and exit(1) (today's behavior).
+        Terminates the current block."""
+        func = self.builder.function
+        top = self.builder.call(self.eh_top, [])
+        has = self.builder.icmp_signed("!=", top, ir.Constant(i8ptr, None))
+        caught_bb = func.append_basic_block("raise.caught")
+        uncaught_bb = func.append_basic_block("raise.uncaught")
+        self.builder.cbranch(has, caught_bb, uncaught_bb)
+
+        self.builder.position_at_end(caught_bb)
+        self.builder.call(self.eh_set_msg, [msg_ptr])
+        self.builder.call(self.tw_longjmp, [top, ir.Constant(i32, 1)])
+        self.builder.unreachable()
+
+        self.builder.position_at_end(uncaught_bb)
+        self.builder.call(self.printf, [self._str_ptr(self._fmt_str), msg_ptr])
+        self.builder.call(self.exit, [ir.Constant(i32, 1)])
+        self.builder.unreachable()
 
     def _bounds_check(self, arr: ir.Value, idx: ir.Value) -> None:
         """Abort with a message if idx is outside [0, arr.length)."""
@@ -914,8 +1006,8 @@ class CodeGen:
             return self.builder.call(self.printf, [self._str_ptr(self._fmt_str_raw), value])
         if name == "panic":
             msg = self._gen_expr(args[0])
-            self.builder.call(self.printf, [self._str_ptr(self._fmt_str), msg])
-            return self.builder.call(self.exit, [ir.Constant(i32, 1)])
+            self._raise(msg)
+            return None
         if name == "__http_listen":
             return self.builder.call(self.http_listen, [self._gen_expr(args[0])])
         if name == "__http_port":
