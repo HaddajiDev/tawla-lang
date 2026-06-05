@@ -17,6 +17,7 @@ program's entry point) only make sense in the file you actually run, so we say n
 to them anywhere else.
 """
 
+import sys
 from pathlib import Path
 
 from .ast_nodes import ClassDecl, FuncDecl, Import, InterfaceDecl
@@ -27,7 +28,11 @@ _DECLS = (ClassDecl, InterfaceDecl, FuncDecl)
 
 # Bundled standard-library modules (IO.twl, ...) live here. An import that isn't
 # found next to the importing file falls back to this directory.
-STDLIB_DIR = Path(__file__).resolve().parent / "stdlib"
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    # PyInstaller one-file bundle: stdlib is extracted under _MEIPASS/tawla/stdlib
+    STDLIB_DIR = Path(sys._MEIPASS) / "tawla" / "stdlib"
+else:
+    STDLIB_DIR = Path(__file__).resolve().parent / "stdlib"
 
 
 class LoadError(Exception):
