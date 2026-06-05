@@ -35,6 +35,8 @@ from .ast_nodes import (
     Return,
     SuperCall,
     Ternary,
+    Throw,
+    TryCatch,
     UnaryOp,
     VarDecl,
     While,
@@ -184,6 +186,14 @@ class _Mono:
             return replace(s, value=None if s.value is None else self.xf_expr(s.value, subst))
         if isinstance(s, SuperCall):
             return replace(s, args=[self.xf_expr(a, subst) for a in s.args])
+        if isinstance(s, Throw):
+            return replace(s, value=self.xf_expr(s.value, subst))
+        if isinstance(s, TryCatch):
+            return replace(
+                s,
+                try_body=[self.xf_stmt(x, subst) for x in s.try_body],
+                catch_body=[self.xf_stmt(x, subst) for x in s.catch_body],
+            )
         return s
 
     def xf_expr(self, e, subst):

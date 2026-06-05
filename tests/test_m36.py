@@ -26,3 +26,9 @@ def test_parses_bare_find_out():
     stmts = _stmts('fuck_around { panic("boom"); } find_out { print("caught"); }')
     assert isinstance(stmts[0], TryCatch)
     assert stmts[0].catch_var is None
+
+
+def test_sema_throw_requires_string(run_twl):
+    r = run_twl('fuck_around { throw 5; } find_out (e) { print(e); }')
+    assert r.returncode != 0
+    assert "string" in r.stderr
