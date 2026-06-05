@@ -1,0 +1,55 @@
+name: Release binaries
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            bin: dist/tawlac.exe
+            asset: tawlac-windows.exe
+          - os: macos-latest
+            bin: dist/tawlac
+            asset: tawlac-macos
+          - os: ubuntu-latest
+            bin: dist/tawlac
+            asset: tawlac-linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: python -m pip install -e . "pyinstaller>=6"
+
+      - name: Build
+        run: pyinstaller tawlac.spec --clean --noconfirm
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          BIN="${{ matrix.bin }}"
+          "$BIN" version | grep -q "tawlac"
+          "$BIN" run examples/hello.twl | tr -d '\r' | grep -xq "10"
+          "$BIN" run examples/smoke.twl | tr -d '\r' | tr '\n' ' ' | grep -q "2 8"
+
+      - name: Stage asset
+        shell: bash
+        run: cp "${{ matrix.bin }}" "${{ matrix.asset }}"
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.asset }}
