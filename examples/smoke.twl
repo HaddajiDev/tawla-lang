@@ -9,5 +9,8 @@ class Main {
         xs.add(8);
         print(xs.size());      // 2
         print(xs.get(1));      // 8
+
+        // exercises setjmp/longjmp so the release binary proves exceptions work
+        fuck_around { throw "z"; } find_out (e) { print(e); }   // z
     }
 }
