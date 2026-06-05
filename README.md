@@ -37,6 +37,35 @@ pip install tawla
 That pulls in everything it needs (including LLVM, via llvmlite) and gives you the
 `tawlac` command. Works the same on Windows, macOS, and Linux.
 
+### No Python? Download a standalone binary
+
+Each release also ships a self-contained `tawlac` that bundles everything it
+needs — no Python install required. Grab the one for your OS from the
+[Releases page](https://github.com/HaddajiDev/tawla-lang/releases) and put it on
+your `PATH`:
+
+- **Windows:** download `tawlac-windows.exe`, rename it to `tawlac.exe`, move it
+  into a folder such as `C:\tools\tawla`, then add that folder to your `Path`
+  environment variable (Settings → "Edit the system environment variables" →
+  Environment Variables → edit `Path`). Open a new terminal and run `tawlac`.
+- **macOS:** download `tawlac-macos`, then:
+  ```
+  mv tawlac-macos tawlac
+  chmod +x tawlac
+  sudo mv tawlac /usr/local/bin/
+  ```
+  First launch may be blocked because the binary is unsigned — allow it under
+  System Settings → Privacy & Security, or run
+  `xattr -d com.apple.quarantine /usr/local/bin/tawlac`.
+- **Linux:** download `tawlac-linux`, then:
+  ```
+  mv tawlac-linux tawlac
+  chmod +x tawlac
+  sudo mv tawlac /usr/local/bin/
+  ```
+
+Then `tawlac run app.twl` works from anywhere, exactly like the pip version.
+
 Hacking on it from a clone of this repo instead? That works too:
 
 ```

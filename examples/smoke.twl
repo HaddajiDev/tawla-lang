@@ -1,0 +1,13 @@
+// Release smoke test: exercises the bundled standard library so a built
+// binary proves it can find and run stdlib modules (frozen-path resolution).
+import "Collections.twl";
+
+class Main {
+    void main() {
+        List<int> xs = new List<int>();
+        xs.add(7);
+        xs.add(8);
+        print(xs.size());      // 2
+        print(xs.get(1));      // 8
+    }
+}
