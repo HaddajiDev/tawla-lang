@@ -70,13 +70,22 @@ class HttpState:
         request_line = lines[0].decode("latin-1") if lines and lines[0] else ""
         parts = request_line.split(" ")
         method = parts[0] if len(parts) > 0 else ""
-        path = parts[1] if len(parts) > 1 else ""
+        target = parts[1] if len(parts) > 1 else ""
+        raw_path, _, query_str = target.partition("?")
+        from urllib.parse import parse_qs
+        query = {k: v[0] for k, v in parse_qs(query_str, keep_blank_values=True).items()}
+        headers = {}
         length = 0
         for ln in lines[1:]:
             key, sep, val = ln.partition(b":")
-            if sep and key.strip().lower() == b"content-length":
+            if not sep:
+                continue
+            name = key.strip().decode("latin-1").lower()
+            value = val.strip().decode("latin-1")
+            headers[name] = value
+            if name == "content-length":
                 try:
-                    length = int(val.strip())
+                    length = int(value)
                 except ValueError:
                     length = 0
         body = rest
@@ -89,7 +98,9 @@ class HttpState:
         self.requests[rid] = {
             "conn": conn,
             "method": method,
-            "path": path,
+            "path": raw_path,
+            "query": query,
+            "headers": headers,
             "body": body[:length].decode("utf-8", "replace") if length else "",
         }
         return rid
@@ -102,6 +113,12 @@ class HttpState:
 
     def body(self, rid: int) -> str:
         return self.requests[rid]["body"]
+
+    def query(self, rid: int, key: str):
+        return self.requests[rid]["query"].get(key)
+
+    def header(self, rid: int, key: str):
+        return self.requests[rid]["headers"].get(key.lower())
 
     def respond(self, rid: int, status: int, content_type: str, body: str) -> None:
         req = self.requests.pop(rid, None)
@@ -143,7 +160,21 @@ _c_respond = ctypes.CFUNCTYPE(None, ctypes.c_int32, ctypes.c_int32, ctypes.c_cha
     )
 )
 
-_CALLBACKS = [_c_listen, _c_port, _c_accept, _c_method, _c_path, _c_body, _c_respond]
+
+def _query(rid, key):
+    v = STATE.query(rid, key.decode("utf-8") if key else "")
+    return _alloc_str(v) if v is not None else 0
+
+
+def _header(rid, key):
+    v = STATE.header(rid, key.decode("utf-8") if key else "")
+    return _alloc_str(v) if v is not None else 0
+
+
+_c_query = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_int32, ctypes.c_char_p)(_query)
+_c_header = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_int32, ctypes.c_char_p)(_header)
+
+_CALLBACKS = [_c_listen, _c_port, _c_accept, _c_method, _c_path, _c_body, _c_respond, _c_query, _c_header]
 _registered = False
 
 
@@ -159,5 +190,7 @@ def install() -> None:
         llvm.add_symbol("__http_path", cast(_c_path, ctypes.c_void_p).value)
         llvm.add_symbol("__http_body", cast(_c_body, ctypes.c_void_p).value)
         llvm.add_symbol("__http_respond", cast(_c_respond, ctypes.c_void_p).value)
+        llvm.add_symbol("__http_query", cast(_c_query, ctypes.c_void_p).value)
+        llvm.add_symbol("__http_header", cast(_c_header, ctypes.c_void_p).value)
         _registered = True
     STATE.reset()
