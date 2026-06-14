@@ -1,0 +1,40 @@
+// A tiny REST API: path params, query strings, and request headers.
+// Run it, then in another terminal:
+//   curl localhost:8080/users/42
+//   curl "localhost:8080/search?q=hello"
+//   curl -H "X-Token: secret" localhost:8080/whoami
+import "Http.twl";
+
+class GetUser : Handler {
+    public void handle(Request req) {
+        req.respondJson(200, "{\"id\": \"" + req.param("id") + "\"}");
+    }
+}
+
+class Search : Handler {
+    public void handle(Request req) {
+        string q = req.query("q");
+        if (q == null) { q = "(none)"; }
+        req.respond(200, "searching for: " + q);
+    }
+}
+
+class WhoAmI : Handler {
+    public void handle(Request req) {
+        string tok = req.header("X-Token");
+        if (tok == null) { req.respond(401, "no token"); }
+        else { req.respond(200, "token: " + tok); }
+    }
+}
+
+class Main {
+    void main() {
+        Router router = new Router();
+        router.get("/users/:id", new GetUser());
+        router.get("/search", new Search());
+        router.get("/whoami", new WhoAmI());
+        Server s = new Server(8080);
+        print("listening on http://localhost:8080");
+        s.serve(router);
+    }
+}

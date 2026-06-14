@@ -115,6 +115,8 @@ _BUILTINS = {
     "__http_method": ([INT], STRING),
     "__http_path": ([INT], STRING),
     "__http_body": ([INT], STRING),
+    "__http_query": ([INT, STRING], STRING),
+    "__http_header": ([INT, STRING], STRING),
     "__http_respond": ([INT, INT, STRING, STRING], VOID),
     "__fetch": ([STRING, STRING, STRING], INT),
     "__fetch_status": ([INT], INT),

@@ -153,6 +153,9 @@ class CodeGen:
         self.http_method = ir.Function(self.module, i32_to_str, name="__http_method")
         self.http_path = ir.Function(self.module, i32_to_str, name="__http_path")
         self.http_body = ir.Function(self.module, i32_to_str, name="__http_body")
+        i32_str_to_str = ir.FunctionType(i8ptr, [i32, i8ptr])
+        self.http_query = ir.Function(self.module, i32_str_to_str, name="__http_query")
+        self.http_header = ir.Function(self.module, i32_str_to_str, name="__http_header")
         self.http_respond = ir.Function(
             self.module, ir.FunctionType(void, [i32, i32, i8ptr, i8ptr]), name="__http_respond"
         )
@@ -1018,6 +1021,10 @@ class CodeGen:
             return self.builder.call(self.http_path, [self._gen_expr(args[0])])
         if name == "__http_body":
             return self.builder.call(self.http_body, [self._gen_expr(args[0])])
+        if name == "__http_query":
+            return self.builder.call(self.http_query, [self._gen_expr(args[0]), self._gen_expr(args[1])])
+        if name == "__http_header":
+            return self.builder.call(self.http_header, [self._gen_expr(args[0]), self._gen_expr(args[1])])
         if name == "__http_respond":
             rid = self._gen_expr(args[0])
             status = self._gen_expr(args[1])
