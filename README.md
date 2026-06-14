@@ -148,10 +148,13 @@ tawlac help            # or: tawlac help run
   is the error message string. `throw "msg";` raises one, and built-in errors
   (`panic`, null dereference, array-out-of-bounds) are catchable too. Use bare
   `find_out { ... }` to ignore the message.
-- **HTTP server:** `import "Http.twl";` gives you a `Server`, a `Request`
-  (`method`/`path`/`body`/`respond`), and an Express-style `Router` with
-  `Handler` classes — `router.get("/health", new Health())` then
-  `new Server(8080).serve(router)`. Single-threaded, minimal HTTP/1.1.
+- **HTTP server:** `import "Http.twl";` gives you a `Server`, a `Request`, and an
+  Express-style `Router` with `Handler` classes. Routes take path params —
+  `router.get("/users/:id", new GetUser())` — and inside a handler `req.param("id")`,
+  `req.query("page")`, and `req.header("Authorization")` read the path param,
+  query string, and request header (each `null` when absent). `req.method()`/
+  `path()`/`body()`/`respond()`/`respondJson()` round it out. Single-threaded,
+  minimal HTTP/1.1.
 - **HTTP client (`fetch`):** `fetch(url)` (GET) or `httpRequest(method, url, body)`
   returns a `Response` with `status()` and `body()` — call other services.
   Network failures come back as `status() == 0`.
