@@ -7,10 +7,18 @@ import "Collections.twl";
 
 class Request {
     private int id;
-    public Request(int id) { this.id = id; }
+    private Map<string, string> params;
+    public Request(int id) {
+        this.id = id;
+        this.params = new Map<string, string>();
+    }
     public string method() { return __http_method(this.id); }
     public string path() { return __http_path(this.id); }
     public string body() { return __http_body(this.id); }
+    public string query(string name) { return __http_query(this.id, name); }
+    public string header(string name) { return __http_header(this.id, name); }
+    public string param(string name) { return this.params.get(name); }
+    public void bindParam(string name, string value) { this.params.put(name, value); }
     public void respond(int status, string body) {
         __http_respond(this.id, status, "text/plain", body);
     }
@@ -49,13 +57,62 @@ class Router {
     public void get(string path, Handler h) { this.routes.add(new Route("GET", path, h)); }
     public void post(string path, Handler h) { this.routes.add(new Route("POST", path, h)); }
 
+    private List<string> splitPath(string p) {
+        List<string> out = new List<string>();
+        int n = p.length;
+        int start = 0;
+        int i = 0;
+        while (i < n) {
+            if (charAt(p, i) == 47) {            // '/'
+                if (i > start) { out.add(substring(p, start, i)); }
+                start = i + 1;
+            }
+            i = i + 1;
+        }
+        if (n > start) { out.add(substring(p, start, n)); }
+        return out;
+    }
+
+    private bool isParam(string seg) {
+        return seg.length > 0 && charAt(seg, 0) == 58;   // ':'
+    }
+
+    private bool segMatch(List<string> pat, List<string> act) {
+        if (pat.size() != act.size()) { return false; }
+        int i = 0;
+        while (i < pat.size()) {
+            string ps = pat.get(i);
+            if (!this.isParam(ps)) {
+                if (ps != act.get(i)) { return false; }
+            }
+            i = i + 1;
+        }
+        return true;
+    }
+
+    private void bindParams(List<string> pat, List<string> act, Request req) {
+        int i = 0;
+        while (i < pat.size()) {
+            string ps = pat.get(i);
+            if (this.isParam(ps)) {
+                req.bindParam(substring(ps, 1, ps.length), act.get(i));
+            }
+            i = i + 1;
+        }
+    }
+
     public void handle(Request req) {
+        List<string> act = this.splitPath(req.path());
         int i = 0;
         while (i < this.routes.size()) {
             Route r = this.routes.get(i);
-            if (r.method == req.method() && r.path == req.path()) {
-                r.handler.handle(req);
-                return;
+            if (r.method == req.method()) {
+                List<string> pat = this.splitPath(r.path);
+                if (this.segMatch(pat, act)) {
+                    this.bindParams(pat, act, req);
+                    r.handler.handle(req);
+                    return;
+                }
             }
             i = i + 1;
         }
