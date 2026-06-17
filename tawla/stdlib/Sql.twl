@@ -1,0 +1,56 @@
+// SQLite database access. Import with:  import "Sql.twl";
+//
+// Db opens a database, Stmt is a prepared statement you bind parameters onto,
+// and Rows is a cursor over a query result. SQL errors are thrown — catch them
+// with  fuck_around { ... } find_out (e) { ... }.
+
+class Rows {
+    private int id;
+    public Rows(int id) { this.id = id; }
+
+    public bool next() { return __sql_next(this.id) != 0; }
+
+    public int getIntAt(int i) { return __sql_col_int(this.id, i); }
+    public float getFloatAt(int i) { return __sql_col_float(this.id, i); }
+    public string getStringAt(int i) { return __sql_col_str(this.id, i); }
+    public bool isNullAt(int i) { return __sql_is_null(this.id, i) != 0; }
+
+    public int getInt(string name) { return __sql_col_int(this.id, __sql_col_index(this.id, name)); }
+    public float getFloat(string name) { return __sql_col_float(this.id, __sql_col_index(this.id, name)); }
+    public string getString(string name) { return __sql_col_str(this.id, __sql_col_index(this.id, name)); }
+    public bool isNull(string name) { return __sql_is_null(this.id, __sql_col_index(this.id, name)) != 0; }
+}
+
+class Stmt {
+    private int id;
+    public Stmt(int id) { this.id = id; }
+
+    public void bindInt(int index, int value) { __sql_bind_int(this.id, index, value); }
+    public void bindFloat(int index, float value) { __sql_bind_float(this.id, index, value); }
+    public void bindString(int index, string value) { __sql_bind_str(this.id, index, value); }
+
+    public void exec() {
+        if (__sql_exec(this.id) != 0) { throw __sql_error(); }
+    }
+
+    public Rows query() {
+        int r = __sql_query(this.id);
+        if (r < 0) { throw __sql_error(); }
+        return new Rows(r);
+    }
+}
+
+class Db {
+    private int id;
+    public Db(string path) {
+        this.id = __sql_open(path);
+        if (this.id < 0) { throw __sql_error(); }
+    }
+
+    public Stmt prepare(string sql) { return new Stmt(__sql_prepare(this.id, sql)); }
+
+    public void exec(string sql) {
+        Stmt s = this.prepare(sql);
+        s.exec();
+    }
+}
