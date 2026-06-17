@@ -158,6 +158,10 @@ tawlac help            # or: tawlac help run
 - **HTTP client (`fetch`):** `fetch(url)` (GET) or `httpRequest(method, url, body)`
   returns a `Response` with `status()` and `body()` — call other services.
   Network failures come back as `status() == 0`.
+- **SQLite:** `import "Sql.twl";` gives you `Db`, prepared `Stmt`s, and a `Rows`
+  cursor — `Db db = new Db("app.db"); Stmt q = db.prepare("SELECT name FROM users WHERE age > ?"); q.bindInt(0, 18); Rows r = q.query();`
+  then `r.next()` / `r.getString("name")`. Parameters bind by index
+  (injection-safe); SQL errors throw (catch with `fuck_around`/`find_out`).
 - **Built-in functions:** a handful of predefined functions you can call without
   declaring anything — `sqrt`, `pow`, `abs`, `min`, `max`, `floor`, `ceil` for
   math, plus `collect()`/`__live()` for the GC.
