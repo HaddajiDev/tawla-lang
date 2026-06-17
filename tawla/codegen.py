@@ -156,6 +156,20 @@ class CodeGen:
         i32_str_to_str = ir.FunctionType(i8ptr, [i32, i8ptr])
         self.http_query = ir.Function(self.module, i32_str_to_str, name="__http_query")
         self.http_header = ir.Function(self.module, i32_str_to_str, name="__http_header")
+        self.sql_open = ir.Function(self.module, ir.FunctionType(i32, [i8ptr]), name="__sql_open")
+        self.sql_prepare = ir.Function(self.module, ir.FunctionType(i32, [i32, i8ptr]), name="__sql_prepare")
+        self.sql_bind_int = ir.Function(self.module, ir.FunctionType(void, [i32, i32, i32]), name="__sql_bind_int")
+        self.sql_bind_float = ir.Function(self.module, ir.FunctionType(void, [i32, i32, f64]), name="__sql_bind_float")
+        self.sql_bind_str = ir.Function(self.module, ir.FunctionType(void, [i32, i32, i8ptr]), name="__sql_bind_str")
+        self.sql_exec = ir.Function(self.module, ir.FunctionType(i32, [i32]), name="__sql_exec")
+        self.sql_query = ir.Function(self.module, ir.FunctionType(i32, [i32]), name="__sql_query")
+        self.sql_next = ir.Function(self.module, ir.FunctionType(i32, [i32]), name="__sql_next")
+        self.sql_col_index = ir.Function(self.module, ir.FunctionType(i32, [i32, i8ptr]), name="__sql_col_index")
+        self.sql_col_int = ir.Function(self.module, ir.FunctionType(i32, [i32, i32]), name="__sql_col_int")
+        self.sql_col_float = ir.Function(self.module, ir.FunctionType(f64, [i32, i32]), name="__sql_col_float")
+        self.sql_col_str = ir.Function(self.module, ir.FunctionType(i8ptr, [i32, i32]), name="__sql_col_str")
+        self.sql_is_null = ir.Function(self.module, ir.FunctionType(i32, [i32, i32]), name="__sql_is_null")
+        self.sql_error = ir.Function(self.module, ir.FunctionType(i8ptr, []), name="__sql_error")
         self.http_respond = ir.Function(
             self.module, ir.FunctionType(void, [i32, i32, i8ptr, i8ptr]), name="__http_respond"
         )
@@ -1025,6 +1039,34 @@ class CodeGen:
             return self.builder.call(self.http_query, [self._gen_expr(args[0]), self._gen_expr(args[1])])
         if name == "__http_header":
             return self.builder.call(self.http_header, [self._gen_expr(args[0]), self._gen_expr(args[1])])
+        if name == "__sql_open":
+            return self.builder.call(self.sql_open, [self._gen_expr(args[0])])
+        if name == "__sql_prepare":
+            return self.builder.call(self.sql_prepare, [self._gen_expr(args[0]), self._gen_expr(args[1])])
+        if name == "__sql_bind_int":
+            return self.builder.call(self.sql_bind_int, [self._gen_expr(args[0]), self._gen_expr(args[1]), self._gen_expr(args[2])])
+        if name == "__sql_bind_float":
+            return self.builder.call(self.sql_bind_float, [self._gen_expr(args[0]), self._gen_expr(args[1]), self._as_f64(args[2])])
+        if name == "__sql_bind_str":
+            return self.builder.call(self.sql_bind_str, [self._gen_expr(args[0]), self._gen_expr(args[1]), self._gen_expr(args[2])])
+        if name == "__sql_exec":
+            return self.builder.call(self.sql_exec, [self._gen_expr(args[0])])
+        if name == "__sql_query":
+            return self.builder.call(self.sql_query, [self._gen_expr(args[0])])
+        if name == "__sql_next":
+            return self.builder.call(self.sql_next, [self._gen_expr(args[0])])
+        if name == "__sql_col_index":
+            return self.builder.call(self.sql_col_index, [self._gen_expr(args[0]), self._gen_expr(args[1])])
+        if name == "__sql_col_int":
+            return self.builder.call(self.sql_col_int, [self._gen_expr(args[0]), self._gen_expr(args[1])])
+        if name == "__sql_col_float":
+            return self.builder.call(self.sql_col_float, [self._gen_expr(args[0]), self._gen_expr(args[1])])
+        if name == "__sql_col_str":
+            return self.builder.call(self.sql_col_str, [self._gen_expr(args[0]), self._gen_expr(args[1])])
+        if name == "__sql_is_null":
+            return self.builder.call(self.sql_is_null, [self._gen_expr(args[0]), self._gen_expr(args[1])])
+        if name == "__sql_error":
+            return self.builder.call(self.sql_error, [])
         if name == "__http_respond":
             rid = self._gen_expr(args[0])
             status = self._gen_expr(args[1])

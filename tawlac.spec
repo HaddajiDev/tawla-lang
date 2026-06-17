@@ -12,6 +12,7 @@ datas += [("tawla/stdlib", "tawla/stdlib")]
 # are always included even if static analysis misses an indirect import.
 hiddenimports += [
     "tawla.eh_runtime",
+    "tawla.sqlite_runtime",
     "tawla.gc_runtime",
     "tawla.io_runtime",
     "tawla.http_runtime",

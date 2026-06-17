@@ -1,0 +1,30 @@
+// SQLite: prepared statements, parameter binding, a row cursor, and catchable
+// SQL errors. Uses an in-memory database, so it leaves no file behind.
+import "Sql.twl";
+
+class Main {
+    void main() {
+        Db db = new Db(":memory:");
+        db.exec("CREATE TABLE users(id INTEGER PRIMARY KEY, name TEXT, age INT)");
+
+        Stmt ins = db.prepare("INSERT INTO users(name, age) VALUES (?, ?)");
+        ins.bindString(0, "Ada"); ins.bindInt(1, 36); ins.exec();
+
+        Stmt ins2 = db.prepare("INSERT INTO users(name, age) VALUES (?, ?)");
+        ins2.bindString(0, "Linus"); ins2.bindInt(1, 54); ins2.exec();
+
+        Stmt q = db.prepare("SELECT name, age FROM users WHERE age > ? ORDER BY age");
+        q.bindInt(0, 40);
+        Rows r = q.query();
+        while (r.next()) {
+            print(r.getString("name") + " is " + toString(r.getInt("age")));
+        }
+
+        // SQL errors are catchable
+        fuck_around {
+            db.exec("INSERT INTO nope VALUES (1)");
+        } find_out (e) {
+            print("db error handled");
+        }
+    }
+}

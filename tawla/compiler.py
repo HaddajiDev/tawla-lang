@@ -8,7 +8,15 @@ from pathlib import Path
 
 import llvmlite.binding as llvm
 
-from . import eh_runtime, fetch_runtime, gc_runtime, http_runtime, io_runtime, str_runtime
+from . import (
+    eh_runtime,
+    fetch_runtime,
+    gc_runtime,
+    http_runtime,
+    io_runtime,
+    sqlite_runtime,
+    str_runtime,
+)
 from .codegen import build_module
 from .lexer import tokenize
 from .loader import load_program, resolve_imports
@@ -64,6 +72,7 @@ def _run_items(ast: list) -> int:
     http_runtime.install()
     str_runtime.install()
     fetch_runtime.install()
+    sqlite_runtime.install()
     target_machine = llvm.Target.from_default_triple().create_target_machine()
     module.triple = llvm.get_process_triple()
     module.data_layout = str(target_machine.target_data)
