@@ -27,3 +27,18 @@ def test_sqlite_runtime_roundtrip():
     assert STATE.exec(bad) == 1
     assert STATE.error() != ""
     STATE.reset()
+
+
+def test_sql_builtins_end_to_end(run_twl):
+    src = (
+        "class Main { void main() {"
+        ' int db = __sql_open(":memory:");'
+        ' int c = __sql_prepare(db, "CREATE TABLE t(x INT)");'
+        " print(__sql_exec(c));"
+        ' int ins = __sql_prepare(db, "INSERT INTO t(x) VALUES (?)");'
+        " __sql_bind_int(ins, 0, 7); print(__sql_exec(ins));"
+        ' int q = __sql_prepare(db, "SELECT x FROM t");'
+        " int r = __sql_query(q); print(__sql_next(r)); print(__sql_col_int(r, 0));"
+        " } }"
+    )
+    assert run_twl(src).stdout == "0\n0\n1\n7\n"
