@@ -16,6 +16,7 @@ from . import (
     io_runtime,
     sqlite_runtime,
     str_runtime,
+    sys_runtime,
 )
 from .codegen import build_module
 from .lexer import tokenize
@@ -73,6 +74,7 @@ def _run_items(ast: list) -> int:
     str_runtime.install()
     fetch_runtime.install()
     sqlite_runtime.install()
+    sys_runtime.install()
     target_machine = llvm.Target.from_default_triple().create_target_machine()
     module.triple = llvm.get_process_triple()
     module.data_layout = str(target_machine.target_data)
