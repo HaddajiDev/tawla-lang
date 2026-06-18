@@ -1,0 +1,18 @@
+// File I/O. Import with: import "Fs.twl";
+// read/write/append throw on failure — catch with fuck_around / find_out.
+
+string readFile(string path) {
+    string c = __file_read(path);
+    if (c == null) { throw __fs_error(); }
+    return c;
+}
+
+void writeFile(string path, string content) {
+    if (__file_write(path, content) != 0) { throw __fs_error(); }
+}
+
+void appendFile(string path, string content) {
+    if (__file_append(path, content) != 0) { throw __fs_error(); }
+}
+
+bool exists(string path) { return __file_exists(path) != 0; }

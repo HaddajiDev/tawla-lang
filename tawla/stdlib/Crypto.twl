@@ -1,0 +1,7 @@
+// Hashing. Import with: import "Crypto.twl";
+
+// Lowercase hex SHA-256 of the string's UTF-8 bytes.
+string sha256(string s) { return __sha256(s); }
+
+// Lowercase hex HMAC-SHA-256 — for signing tokens, sessions, and webhooks.
+string hmacSha256(string key, string message) { return __hmac_sha256(key, message); }
