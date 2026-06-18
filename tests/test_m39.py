@@ -33,3 +33,15 @@ def test_sys_runtime_functions(tmp_path):
     os.environ["TAWLA_TEST_VAR"] = "xyz"
     assert ctypes.string_at(S._env_get("TAWLA_TEST_VAR")).decode() == "xyz"
     assert S._env_get("TAWLA_DEFINITELY_UNSET_VAR_123") == 0
+
+
+def test_sys_builtins_end_to_end(run_twl):
+    src = (
+        "class Main { void main() {"
+        ' print(__sha256("abc"));'
+        ' print(__file_exists("definitely_missing_xyz"));'
+        " } }"
+    )
+    assert run_twl(src).stdout == (
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\n0\n"
+    )
