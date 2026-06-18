@@ -13,6 +13,7 @@ datas += [("tawla/stdlib", "tawla/stdlib")]
 hiddenimports += [
     "tawla.eh_runtime",
     "tawla.sqlite_runtime",
+    "tawla.sys_runtime",
     "tawla.gc_runtime",
     "tawla.io_runtime",
     "tawla.http_runtime",

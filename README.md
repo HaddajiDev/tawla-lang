@@ -162,6 +162,10 @@ tawlac help            # or: tawlac help run
   cursor — `Db db = new Db("app.db"); Stmt q = db.prepare("SELECT name FROM users WHERE age > ?"); q.bindInt(0, 18); Rows r = q.query();`
   then `r.next()` / `r.getString("name")`. Parameters bind by index
   (injection-safe); SQL errors throw (catch with `fuck_around`/`find_out`).
+- **Backend essentials:** `import "Sys.twl";` (`getenv`, `now`/`nowMillis`/`sleepMillis`,
+  `uuid`), `import "Fs.twl";` (`readFile`/`writeFile`/`appendFile` — throwing —
+  and `exists`), and `import "Crypto.twl";` (`sha256`, `hmacSha256`). The basics
+  for config, logging, IDs, and signing.
 - **Built-in functions:** a handful of predefined functions you can call without
   declaring anything — `sqrt`, `pow`, `abs`, `min`, `max`, `floor`, `ceil` for
   math, plus `collect()`/`__live()` for the GC.

@@ -1,0 +1,16 @@
+// System essentials: environment, time, and UUIDs. Import with: import "Sys.twl";
+
+// Environment variable value, or null if it isn't set.
+string getenv(string name) { return __env_get(name); }
+
+// Current time as epoch seconds.
+int now() { return __time_secs(); }
+
+// Current time as epoch milliseconds (a float, since it exceeds a 32-bit int).
+float nowMillis() { return __time_millis(); }
+
+// Pause execution for the given number of milliseconds.
+void sleepMillis(int ms) { __sleep_millis(ms); }
+
+// A random UUID (dashed v4 form).
+string uuid() { return __uuid(); }

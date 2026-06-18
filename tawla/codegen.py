@@ -170,6 +170,18 @@ class CodeGen:
         self.sql_col_str = ir.Function(self.module, ir.FunctionType(i8ptr, [i32, i32]), name="__sql_col_str")
         self.sql_is_null = ir.Function(self.module, ir.FunctionType(i32, [i32, i32]), name="__sql_is_null")
         self.sql_error = ir.Function(self.module, ir.FunctionType(i8ptr, []), name="__sql_error")
+        self.env_get = ir.Function(self.module, ir.FunctionType(i8ptr, [i8ptr]), name="__env_get")
+        self.time_secs = ir.Function(self.module, ir.FunctionType(i32, []), name="__time_secs")
+        self.time_millis = ir.Function(self.module, ir.FunctionType(f64, []), name="__time_millis")
+        self.sleep_millis = ir.Function(self.module, ir.FunctionType(void, [i32]), name="__sleep_millis")
+        self.sys_uuid = ir.Function(self.module, ir.FunctionType(i8ptr, []), name="__uuid")
+        self.file_read = ir.Function(self.module, ir.FunctionType(i8ptr, [i8ptr]), name="__file_read")
+        self.file_write = ir.Function(self.module, ir.FunctionType(i32, [i8ptr, i8ptr]), name="__file_write")
+        self.file_append = ir.Function(self.module, ir.FunctionType(i32, [i8ptr, i8ptr]), name="__file_append")
+        self.file_exists = ir.Function(self.module, ir.FunctionType(i32, [i8ptr]), name="__file_exists")
+        self.fs_error = ir.Function(self.module, ir.FunctionType(i8ptr, []), name="__fs_error")
+        self.sha256 = ir.Function(self.module, ir.FunctionType(i8ptr, [i8ptr]), name="__sha256")
+        self.hmac_sha256 = ir.Function(self.module, ir.FunctionType(i8ptr, [i8ptr, i8ptr]), name="__hmac_sha256")
         self.http_respond = ir.Function(
             self.module, ir.FunctionType(void, [i32, i32, i8ptr, i8ptr]), name="__http_respond"
         )
@@ -1067,6 +1079,30 @@ class CodeGen:
             return self.builder.call(self.sql_is_null, [self._gen_expr(args[0]), self._gen_expr(args[1])])
         if name == "__sql_error":
             return self.builder.call(self.sql_error, [])
+        if name == "__env_get":
+            return self.builder.call(self.env_get, [self._gen_expr(args[0])])
+        if name == "__time_secs":
+            return self.builder.call(self.time_secs, [])
+        if name == "__time_millis":
+            return self.builder.call(self.time_millis, [])
+        if name == "__sleep_millis":
+            return self.builder.call(self.sleep_millis, [self._gen_expr(args[0])])
+        if name == "__uuid":
+            return self.builder.call(self.sys_uuid, [])
+        if name == "__file_read":
+            return self.builder.call(self.file_read, [self._gen_expr(args[0])])
+        if name == "__file_write":
+            return self.builder.call(self.file_write, [self._gen_expr(args[0]), self._gen_expr(args[1])])
+        if name == "__file_append":
+            return self.builder.call(self.file_append, [self._gen_expr(args[0]), self._gen_expr(args[1])])
+        if name == "__file_exists":
+            return self.builder.call(self.file_exists, [self._gen_expr(args[0])])
+        if name == "__fs_error":
+            return self.builder.call(self.fs_error, [])
+        if name == "__sha256":
+            return self.builder.call(self.sha256, [self._gen_expr(args[0])])
+        if name == "__hmac_sha256":
+            return self.builder.call(self.hmac_sha256, [self._gen_expr(args[0]), self._gen_expr(args[1])])
         if name == "__http_respond":
             rid = self._gen_expr(args[0])
             status = self._gen_expr(args[1])

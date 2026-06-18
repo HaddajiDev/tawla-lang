@@ -1,0 +1,23 @@
+// Backend essentials: env vars, time, UUIDs, file I/O, and hashing.
+import "Sys.twl";
+import "Fs.twl";
+import "Crypto.twl";
+
+class Main {
+    void main() {
+        // a request id + a signed token
+        string id = uuid();
+        print("request " + id);
+        print("sig " + hmacSha256("secret-key", id));
+
+        // write a log line, read it back
+        string line = "[" + toString(now()) + "] handled " + id + "\n";
+        writeFile("essentials.log", line);
+        print("log: " + readFile("essentials.log"));
+
+        // a config value with a fallback
+        string mode = getenv("APP_MODE");
+        if (mode == null) { mode = "dev"; }
+        print("mode " + mode);
+    }
+}
