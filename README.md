@@ -166,6 +166,12 @@ tawlac help            # or: tawlac help run
   `uuid`), `import "Fs.twl";` (`readFile`/`writeFile`/`appendFile` — throwing —
   and `exists`), and `import "Crypto.twl";` (`sha256`, `hmacSha256`). The basics
   for config, logging, IDs, and signing.
+- **String interpolation:** `"hi ${user.name}, ${n + 1} items"` inside any string
+  literal (a bare `$` stays literal). Embedded expressions are stringified with
+  `toString`, which now also handles `bool` and `string`.
+- **JSON serialization:** every class has an auto-generated `toJson()` returning
+  a JSON string over its fields (primitives, nested objects, arrays) —
+  `req.respondJson(200, user.toJson())`. (JSON → object parsing stays in `Json.twl`.)
 - **Built-in functions:** a handful of predefined functions you can call without
   declaring anything — `sqrt`, `pow`, `abs`, `min`, `max`, `floor`, `ceil` for
   math, plus `collect()`/`__live()` for the GC.

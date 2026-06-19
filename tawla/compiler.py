@@ -22,6 +22,7 @@ from .codegen import build_module
 from .lexer import tokenize
 from .loader import load_program, resolve_imports
 from .monomorphize import monomorphize
+from .tojson import synthesize_tojson
 from .parser import parse
 from .sema import check as type_check
 
@@ -63,6 +64,7 @@ def run_file(path) -> int:
 
 def _run_items(ast: list) -> int:
     ast = monomorphize(ast)
+    ast = synthesize_tojson(ast)
     type_check(ast)
     module = build_module(ast)
 

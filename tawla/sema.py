@@ -143,6 +143,7 @@ _BUILTINS = {
     "__fs_error": ([], STRING),
     "__sha256": ([STRING], STRING),
     "__hmac_sha256": ([STRING, STRING], STRING),
+    "__json_escape": ([STRING], STRING),
     "__http_respond": ([INT, INT, STRING, STRING], VOID),
     "__fetch": ([STRING, STRING, STRING], INT),
     "__fetch_status": ([INT], INT),
@@ -761,7 +762,11 @@ class Sema:
             types = self._check_numeric(name, args, _MATH_WIDEST[name])
             return FLOAT if FLOAT in types else INT
         if name == "toString":
-            self._check_numeric(name, args, 1)
+            if len(args) != 1:
+                raise SemaError(f"'toString' expects 1 argument, got {len(args)}")
+            t = self._check_expr(args[0])
+            if t not in (INT, FLOAT, BOOL, STRING):
+                raise SemaError(f"toString expects int, float, bool, or string, got {t}")
             return STRING
         return None
 

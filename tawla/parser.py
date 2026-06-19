@@ -85,6 +85,7 @@ from .ast_nodes import (
     VarDecl,
     While,
 )
+from .lexer import tokenize
 from .tokens import Token, TokenKind
 
 _COMPARISON_OPS = {
@@ -638,6 +639,27 @@ class Parser:
                 node = Index(node, index)
         return node
 
+    def _build_interp(self, parts) -> Expr:
+        node = None
+        for kind, text in parts:
+            if kind == "lit":
+                if text == "":
+                    continue
+                piece = StringLiteral(text)
+            else:
+                piece = Call("toString", [self._parse_interp_expr(text)])
+            node = piece if node is None else BinaryOp("+", node, piece)
+        return node if node is not None else StringLiteral("")
+
+    def _parse_interp_expr(self, src: str) -> Expr:
+        sub = Parser(tokenize(src))
+        if sub.current.kind is TokenKind.EOF:
+            raise ParseError("empty '${}' interpolation")
+        expr = sub.expr()
+        if sub.current.kind is not TokenKind.EOF:
+            raise ParseError(f"unexpected tokens in interpolation: {src!r}")
+        return expr
+
     def primary(self) -> Expr:
         tok = self.current
 
@@ -652,6 +674,10 @@ class Parser:
         if tok.kind is TokenKind.STRING:
             self.advance()
             return StringLiteral(tok.text)
+
+        if tok.kind is TokenKind.INTERP:
+            self.advance()
+            return self._build_interp(tok.parts)
 
         if tok.kind is TokenKind.KW_TRUE:
             self.advance()
