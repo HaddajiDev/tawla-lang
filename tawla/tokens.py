@@ -8,6 +8,7 @@ class TokenKind(Enum):
     INT = auto()
     FLOAT = auto()
     STRING = auto()
+    INTERP = auto()
     IDENT = auto()
     KW_INT = auto()
     KW_FLOAT = auto()
@@ -106,3 +107,4 @@ class Token:
     kind: TokenKind
     text: str | None = None
     pos: int = 0
+    parts: list | None = None

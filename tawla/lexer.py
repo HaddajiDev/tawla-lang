@@ -81,7 +81,9 @@ def tokenize(src: str) -> list[Token]:
         if c == '"':
             start = i
             i += 1
-            chars: list[str] = []
+            parts: list = []
+            buf: list[str] = []
+            has_expr = False
             while i < n and src[i] != '"':
                 if src[i] == "\\":
                     i += 1
@@ -90,14 +92,47 @@ def tokenize(src: str) -> list[Token]:
                     esc = _ESCAPES.get(src[i])
                     if esc is None:
                         raise LexError(f"unknown escape '\\{src[i]}' at position {i}")
-                    chars.append(esc)
+                    buf.append(esc)
+                    i += 1
+                elif src[i] == "$" and i + 1 < n and src[i + 1] == "{":
+                    parts.append(("lit", "".join(buf)))
+                    buf = []
+                    has_expr = True
+                    i += 2  # past "${"
+                    expr_start = i
+                    depth = 1
+                    while i < n and depth > 0:
+                        ch = src[i]
+                        if ch == '"':
+                            i += 1
+                            while i < n and src[i] != '"':
+                                if src[i] == "\\":
+                                    i += 1
+                                i += 1
+                            i += 1  # past closing quote
+                            continue
+                        if ch == "{":
+                            depth += 1
+                        elif ch == "}":
+                            depth -= 1
+                            if depth == 0:
+                                break
+                        i += 1
+                    if depth != 0:
+                        raise LexError(f"unterminated ${{...}} in string at position {start}")
+                    parts.append(("expr", src[expr_start:i]))
+                    i += 1  # past closing "}"
                 else:
-                    chars.append(src[i])
-                i += 1
+                    buf.append(src[i])
+                    i += 1
             if i >= n:
                 raise LexError(f"unterminated string literal at position {start}")
-            i += 1
-            tokens.append(Token(TokenKind.STRING, "".join(chars), start))
+            i += 1  # past closing quote
+            if has_expr:
+                parts.append(("lit", "".join(buf)))
+                tokens.append(Token(TokenKind.INTERP, None, start, parts=parts))
+            else:
+                tokens.append(Token(TokenKind.STRING, "".join(buf), start))
             continue
 
         nxt = src[i + 1] if i + 1 < n else ""

@@ -66,9 +66,9 @@ def test_round_trip(run_twl):
     assert run_twl(_main('print(toInt(toString(123)));')).stdout == "123\n"
 
 
-def test_to_string_requires_numeric():
-    with pytest.raises(SemaError):
-        run_source('class Main { void main() { string s = toString("x"); } }')
+def test_to_string_accepts_string_and_bool():
+    # toString is a universal stringifier: string -> itself, bool -> true/false.
+    run_source('class Main { void main() { string s = toString("x"); string b = toString(true); } }')
 
 
 def test_to_int_requires_string():
