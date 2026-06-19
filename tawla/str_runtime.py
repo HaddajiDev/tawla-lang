@@ -6,6 +6,7 @@ the result is copied onto the GC heap, the same way io_runtime returns strings.
 """
 
 import ctypes
+import json
 
 import llvmlite.binding as llvm
 
@@ -22,7 +23,16 @@ def _alloc(s: str) -> int:
 _c_from_int = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_int32)(lambda n: _alloc(str(n)))
 _c_from_float = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_double)(lambda x: _alloc(format(x, "g")))
 
-_CALLBACKS = [_c_from_int, _c_from_float]
+
+def _json_escape(b):
+    if b is None:
+        return _alloc("null")
+    return _alloc(json.dumps(b.decode("utf-8")))
+
+
+_c_json_escape = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_char_p)(lambda b: _json_escape(b))
+
+_CALLBACKS = [_c_from_int, _c_from_float, _c_json_escape]
 _registered = False
 
 
@@ -34,4 +44,5 @@ def install() -> None:
     cast = ctypes.cast
     llvm.add_symbol("num_to_str_i", cast(_c_from_int, ctypes.c_void_p).value)
     llvm.add_symbol("num_to_str_f", cast(_c_from_float, ctypes.c_void_p).value)
+    llvm.add_symbol("__json_escape", cast(_c_json_escape, ctypes.c_void_p).value)
     _registered = True

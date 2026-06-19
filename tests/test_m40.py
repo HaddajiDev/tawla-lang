@@ -23,3 +23,12 @@ def test_interp_basic(run_twl):
 def test_interp_plain_and_escapes(run_twl):
     src = 'class Main { void main() { print("a\\tb"); print("no interp here"); } }'
     assert run_twl(src).stdout == "a\tb\nno interp here\n"
+
+
+def test_json_escape(run_twl):
+    src = (
+        "class Main { void main() {"
+        ' print(__json_escape("hi"));'
+        " string z; print(__json_escape(z)); } }"   # null -> null
+    )
+    assert run_twl(src).stdout == '"hi"\nnull\n'

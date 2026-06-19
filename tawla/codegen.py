@@ -182,6 +182,7 @@ class CodeGen:
         self.fs_error = ir.Function(self.module, ir.FunctionType(i8ptr, []), name="__fs_error")
         self.sha256 = ir.Function(self.module, ir.FunctionType(i8ptr, [i8ptr]), name="__sha256")
         self.hmac_sha256 = ir.Function(self.module, ir.FunctionType(i8ptr, [i8ptr, i8ptr]), name="__hmac_sha256")
+        self.json_escape = ir.Function(self.module, ir.FunctionType(i8ptr, [i8ptr]), name="__json_escape")
         self.http_respond = ir.Function(
             self.module, ir.FunctionType(void, [i32, i32, i8ptr, i8ptr]), name="__http_respond"
         )
@@ -1105,6 +1106,8 @@ class CodeGen:
             return self.builder.call(self.sha256, [self._gen_expr(args[0])])
         if name == "__hmac_sha256":
             return self.builder.call(self.hmac_sha256, [self._gen_expr(args[0]), self._gen_expr(args[1])])
+        if name == "__json_escape":
+            return self.builder.call(self.json_escape, [self._gen_expr(args[0])])
         if name == "__http_respond":
             rid = self._gen_expr(args[0])
             status = self._gen_expr(args[1])

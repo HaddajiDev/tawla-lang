@@ -143,6 +143,7 @@ _BUILTINS = {
     "__fs_error": ([], STRING),
     "__sha256": ([STRING], STRING),
     "__hmac_sha256": ([STRING, STRING], STRING),
+    "__json_escape": ([STRING], STRING),
     "__http_respond": ([INT, INT, STRING, STRING], VOID),
     "__fetch": ([STRING, STRING, STRING], INT),
     "__fetch_status": ([INT], INT),
