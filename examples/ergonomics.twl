@@ -1,0 +1,23 @@
+// String interpolation + automatic JSON serialization.
+class User {
+    public int id;
+    public string name;
+    public string[] roles;
+    public User(int id, string name, string[] roles) {
+        this.id = id; this.name = name; this.roles = roles;
+    }
+}
+
+class Main {
+    void main() {
+        string[] roles = new string[2];
+        roles[0] = "admin"; roles[1] = "user";
+        User u = new User(7, "Ada", roles);
+
+        // interpolation
+        print("user ${u.name} has id ${u.id} and ${u.roles.length} roles");
+
+        // every class can serialize itself to JSON
+        print(u.toJson());
+    }
+}
