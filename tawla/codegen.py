@@ -193,6 +193,8 @@ class CodeGen:
 
         self._fmt_int = self._global_string(b"%d\n\0", "fmt_int")
         self._fmt_str = self._global_string(b"%s\n\0", "fmt_str")
+        self._true_str = self._global_string(b"true\0", "true_str")
+        self._false_str = self._global_string(b"false\0", "false_str")
         self._fmt_float = self._global_string(b"%g\n\0", "fmt_float")
         self._fmt_str_raw = self._global_string(b"%s\0", "fmt_str_raw")
         self._str_oob_msg = self._global_string(b"string index out of range\n\0", "str_oob_msg")
@@ -1157,6 +1159,12 @@ class CodeGen:
             v = self._gen_expr(args[0])
             if v.type == f64:
                 return self.builder.call(self.num_to_str_f, [v])
+            if v.type == i8ptr:
+                return v  # already a string
+            if v.type == i1:
+                return self.builder.select(
+                    v, self._str_ptr(self._true_str), self._str_ptr(self._false_str)
+                )
             return self.builder.call(self.num_to_str_i, [v])
         raise CodeGenError(f"unknown builtin {name!r}")
 
